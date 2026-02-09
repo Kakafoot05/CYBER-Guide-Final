@@ -226,16 +226,27 @@ const summarizeSection = (lines: string[]): string => {
 };
 
 const renderInlineMarkdown = (value: string): React.ReactNode[] => {
-  const chunks = value.split(/\*\*(.*?)\*\*/g);
+  const normalized = value.replace(/\\\*/g, '*');
+  const boldPattern = /\*\*(.+?)\*\*/g;
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null = null;
 
-  return chunks.map((chunk, index) => {
-    const key = `inline-${index}-${chunk}`;
-    if (index % 2 === 1) {
-      return <strong key={key}>{chunk}</strong>;
+  while ((match = boldPattern.exec(normalized)) !== null) {
+    const plainChunk = normalized.slice(cursor, match.index).replace(/\*\*/g, '');
+    if (plainChunk.length > 0) {
+      nodes.push(<React.Fragment key={`text-${cursor}`}>{plainChunk}</React.Fragment>);
     }
+    nodes.push(<strong key={`strong-${match.index}`}>{match[1]}</strong>);
+    cursor = match.index + match[0].length;
+  }
 
-    return <React.Fragment key={key}>{chunk}</React.Fragment>;
-  });
+  const tailChunk = normalized.slice(cursor).replace(/\*\*/g, '');
+  if (tailChunk.length > 0 || nodes.length === 0) {
+    nodes.push(<React.Fragment key={`tail-${cursor}`}>{tailChunk}</React.Fragment>);
+  }
+
+  return nodes;
 };
 
 const downloadMarkdown = (filename: string, content: string): void => {
@@ -458,10 +469,7 @@ const Templates: React.FC = () => {
   }, [selectedTemplate, visualPreview]);
 
   const reportGeneratedAt = useMemo(() => formatDateTime(new Date().toISOString()), []);
-  const reportLogoUrl = useMemo(
-    () => `${window.location.origin}/assets/cyberguide-icon-192.png`,
-    [],
-  );
+  const reportLogoUrl = useMemo(() => `${window.location.origin}/assets/FaviconFinal.png`, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -550,18 +558,37 @@ const Templates: React.FC = () => {
       return;
     }
 
-    const popup = window.open('', '_blank', 'width=1100,height=900');
-    if (!popup) {
-      showToast('Autoriser les popups pour imprimer');
+    const printFrame = document.createElement('iframe');
+    printFrame.setAttribute('aria-hidden', 'true');
+    printFrame.tabIndex = -1;
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    printFrame.style.opacity = '0';
+    document.body.appendChild(printFrame);
+
+    const frameWindow = printFrame.contentWindow;
+    const frameDocument = frameWindow?.document;
+    if (!frameWindow || !frameDocument) {
+      printFrame.remove();
+      showToast('Impossible d ouvrir l aperçu impression');
       return;
     }
 
     const printableHtml = documentPreviewRef.current.innerHTML;
     const docTitle = escapeHtml(`${selectedTemplate.id.toUpperCase()} - ${selectedTemplate.title}`);
+    const cleanupFrame = () => {
+      if (printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+    };
 
     try {
-      popup.document.open();
-      popup.document.write(`<!doctype html>
+      frameDocument.open();
+      frameDocument.write(`<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
@@ -1057,7 +1084,7 @@ const Templates: React.FC = () => {
   </head>
   <body>${printableHtml}</body>
 </html>`);
-      popup.document.close();
+      frameDocument.close();
 
       let printTriggered = false;
       const triggerPrint = () => {
@@ -1065,17 +1092,18 @@ const Templates: React.FC = () => {
           return;
         }
         printTriggered = true;
-        popup.focus();
-        popup.print();
+        frameWindow.focus();
+        frameWindow.print();
       };
 
-      popup.onload = () => {
-        window.setTimeout(triggerPrint, 160);
-      };
-      window.setTimeout(triggerPrint, 700);
-      showToast('Aperçu impression ouvert ✅');
+      frameWindow.addEventListener('afterprint', () => window.setTimeout(cleanupFrame, 200), {
+        once: true,
+      });
+      window.setTimeout(triggerPrint, 220);
+      window.setTimeout(cleanupFrame, 15000);
+      showToast('Impression prête ✅');
     } catch {
-      popup.close();
+      cleanupFrame();
       showToast('Impossible de préparer l impression');
     }
   };
@@ -1553,6 +1581,8 @@ const Templates: React.FC = () => {
                                   src={reportLogoUrl}
                                   alt=""
                                   aria-hidden="true"
+                                  width={192}
+                                  height={192}
                                   className="cg-logo"
                                   style={{
                                     width: '100%',

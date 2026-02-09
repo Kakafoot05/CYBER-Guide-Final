@@ -71,31 +71,28 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <nav
         className={`fixed w-full z-50 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] border-b ${
           isScrolled
-            ? 'bg-brand-navy/98 backdrop-blur-xl border-white/20 py-3 shadow-[0_18px_42px_-22px_rgba(3,13,34,0.9)]'
-            : 'bg-gradient-to-r from-brand-navy via-[#10274a] to-brand-navy border-white/5 py-4 lg:py-5'
+            ? 'bg-brand-navy/98 backdrop-blur-xl border-white/20 py-3.5 shadow-[0_18px_42px_-22px_rgba(3,13,34,0.9)]'
+            : 'bg-gradient-to-r from-brand-navy via-[#10274a] to-brand-navy border-white/5 py-3.5'
         }`}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-gold/70 to-transparent"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
+          <div className="flex min-h-[56px] items-center justify-between md:min-h-[64px]">
             {/* LOGO WORDMARK */}
             <Link
               to="/"
               className="group relative z-50 focus:outline-none flex items-center"
               aria-label="Retour Accueil"
             >
-              <div
-                className={`
-                relative flex items-center justify-start transition-all duration-300 ease-out
-                ${isScrolled ? 'h-8' : 'h-10 md:h-12'}
-              `}
-              >
+              <div className="relative flex h-9 items-center justify-start transition-all duration-300 ease-out md:h-10">
                 <img
                   src="/assets/cyberguide-logo-adapted.png"
                   alt="Cyber Guide"
                   className="h-full w-auto object-contain brightness-110 contrast-125 saturate-110 drop-shadow-[0_0_20px_rgba(142,182,240,0.36)] group-hover:drop-shadow-glow transition-all duration-300"
                   width={888}
                   height={290}
+                  loading="eager"
+                  fetchPriority="high"
                   decoding="async"
                 />
               </div>

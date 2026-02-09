@@ -45,6 +45,18 @@ const TOOL_LOGOS: Record<string, LogoComponent> = {
   t3: PhishingTriageIcon,
 };
 
+type SoftwareLicense = Software['license'];
+type LicenseFilter = 'All' | SoftwareLicense;
+
+const LICENSE_LABELS: Record<SoftwareLicense, string> = {
+  'Open Source': 'Open Source',
+  Free: 'Gratuit',
+  Paid: 'Logiciel proprietaire',
+  Freemium: 'Freemium',
+};
+
+const getLicenseLabel = (license: SoftwareLicense): string => LICENSE_LABELS[license];
+
 // --- SECTION STACK ECOSYSTEM ---
 const STACK_GROUPS = [
   {
@@ -113,7 +125,7 @@ const StackEcosystem: React.FC = () => {
                 return (
                   <div
                     key={software.id}
-                    className="flex items-center gap-2 rounded-sm border border-slate-100 bg-slate-50 p-2"
+                    className="group flex items-center gap-2 rounded-sm border border-slate-100 bg-slate-50 p-2 transition-colors hover:border-brand-steel/40 hover:bg-brand-pale/20"
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-slate-200 bg-white p-1">
                       {software.logoPath ? (
@@ -132,7 +144,12 @@ const StackEcosystem: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] font-medium text-slate-700">{software.name}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-medium text-slate-700">{software.name}</p>
+                      <p className="truncate text-[10px] text-slate-400">
+                        {getLicenseLabel(software.license)}
+                      </p>
+                    </div>
                   </div>
                 );
               })}
@@ -399,21 +416,27 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
                 software.name.substring(0, 2)
               )}
             </div>
-            <div>
-              <h3 className="font-display font-bold text-lg text-brand-navy leading-none">
-                {software.name}
-              </h3>
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
-                {software.category}
-              </span>
+              <div>
+                <h3 className="font-display font-bold text-lg text-brand-navy leading-none">
+                  {software.name}
+                </h3>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+                  {software.category}
+                </span>
+              </div>
             </div>
-          </div>
           <Badge color={getLicenseColor(software.license)} className="text-[9px]">
-            {software.license}
+            {getLicenseLabel(software.license)}
           </Badge>
         </div>
 
-        <p className="text-sm text-slate-600 mb-4 line-clamp-2 leading-relaxed flex-grow">
+        {software.vendor && (
+          <p className="mb-2 text-[10px] font-mono uppercase tracking-wide text-slate-400">
+            Editeur: {software.vendor}
+          </p>
+        )}
+
+        <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
           {software.description}
         </p>
 
@@ -422,6 +445,22 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
             Cas d'usage: <span className="font-medium text-slate-600">{software.useCases[0]}</span>
           </p>
         )}
+
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {software.platforms.slice(0, 2).map((platform) => (
+            <span
+              key={`${software.id}-${platform}`}
+              className="rounded-sm border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-mono uppercase tracking-wide text-slate-500"
+            >
+              {platform}
+            </span>
+          ))}
+          {software.platforms.length > 2 && (
+            <span className="rounded-sm border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-mono uppercase tracking-wide text-slate-500">
+              +{software.platforms.length - 2}
+            </span>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-1 mb-6">
           {software.tags?.slice(0, 3).map((tag) => (
@@ -434,10 +473,11 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
           ))}
         </div>
 
-        <div className="pt-4 border-t border-slate-100 mt-auto flex gap-2">
+        <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between gap-2">
           <span className="text-xs font-bold text-brand-steel group-hover:underline">
             Voir details
           </span>
+          <ArrowRight size={14} className="text-brand-steel transition-transform group-hover:translate-x-1" />
         </div>
       </BlueprintPanel>
     </button>
@@ -449,6 +489,8 @@ const Tools: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'demos' | 'directory'>('demos');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [licenseFilter, setLicenseFilter] = useState<LicenseFilter>('All');
+  const [platformFilter, setPlatformFilter] = useState<'All' | Software['platforms'][number]>('All');
   const [selectedSoftware, setSelectedSoftware] = useState<Software | null>(null);
 
   const categories = useMemo(
@@ -456,16 +498,34 @@ const Tools: React.FC = () => {
     [],
   );
 
+  const platforms = useMemo(
+    () => ['All', ...Array.from(new Set(softwares.flatMap((s) => s.platforms))).sort()],
+    [],
+  );
+
+  const softwareMetrics = useMemo(
+    () => ({
+      total: softwares.length,
+      openSource: softwares.filter((s) => s.license === 'Open Source').length,
+      proprietary: softwares.filter((s) => s.license === 'Paid').length,
+      categories: new Set(softwares.map((s) => s.category)).size,
+    }),
+    [],
+  );
+
   const filteredSoftwares = softwares.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.useCases.some((useCase) => useCase.toLowerCase().includes(searchQuery.toLowerCase())) ||
       s.tags?.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory = categoryFilter === 'All' || s.category === categoryFilter;
+    const matchesLicense = licenseFilter === 'All' || s.license === licenseFilter;
+    const matchesPlatform = platformFilter === 'All' || s.platforms.includes(platformFilter);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesLicense && matchesPlatform;
   });
 
   return (
@@ -573,53 +633,139 @@ const Tools: React.FC = () => {
         {/* VIEW 2: LOGICIELS EXTERNES */}
         {activeTab === 'directory' && (
           <div className="animate-fade-in-up">
-            {/* SEARCH & FILTERS - Simplified */}
-            <div className="bg-white p-4 rounded-sm border border-slate-200 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-end">
-              <div className="flex-grow relative w-full">
-                <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                  Recherche
-                </label>
-                <div className="relative">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    size={16}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Nom, tag..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Catalogue</p>
+                <p className="mt-1 text-2xl font-bold text-brand-navy">{softwareMetrics.total}</p>
+                <p className="text-xs text-slate-500">logiciels références</p>
+              </article>
+              <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Open Source
+                </p>
+                <p className="mt-1 text-2xl font-bold text-emerald-700">{softwareMetrics.openSource}</p>
+                <p className="text-xs text-slate-500">auditables et modulaires</p>
+              </article>
+              <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Proprietaires
+                </p>
+                <p className="mt-1 text-2xl font-bold text-brand-navy">{softwareMetrics.proprietary}</p>
+                <p className="text-xs text-slate-500">support éditeur structuré</p>
+              </article>
+              <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Domaines</p>
+                <p className="mt-1 text-2xl font-bold text-brand-steel">{softwareMetrics.categories}</p>
+                <p className="text-xs text-slate-500">SIEM, IAM, Réseau, observabilité</p>
+              </article>
+            </div>
+
+            <div className="bg-white p-4 rounded-sm border border-slate-200 shadow-sm mb-8">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="relative w-full md:col-span-2 xl:col-span-1">
+                  <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
+                    Recherche
+                  </label>
+                  <div className="relative">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Nom, editeur, cas d usage, tag..."
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="w-full">
+                  <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
+                    Categorie
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c === 'All' ? 'Toutes' : c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
+                    Licence
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
+                    value={licenseFilter}
+                    onChange={(e) => setLicenseFilter(e.target.value as LicenseFilter)}
+                  >
+                    <option value="All">Toutes</option>
+                    <option value="Open Source">{getLicenseLabel('Open Source')}</option>
+                    <option value="Paid">{getLicenseLabel('Paid')}</option>
+                    <option value="Freemium">{getLicenseLabel('Freemium')}</option>
+                    <option value="Free">{getLicenseLabel('Free')}</option>
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
+                    Plateforme
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
+                    value={platformFilter}
+                    onChange={(e) =>
+                      setPlatformFilter(e.target.value as 'All' | Software['platforms'][number])
+                    }
+                  >
+                    {platforms.map((platform) => (
+                      <option key={platform} value={platform}>
+                        {platform === 'All' ? 'Toutes' : platform}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div className="w-full md:w-64">
-                <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                  Categorie
-                </label>
-                <select
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs font-mono uppercase tracking-wide text-slate-500">
+                  {filteredSoftwares.length} logiciel{filteredSoftwares.length > 1 ? 's' : ''}{' '}
+                  sélectionné{filteredSoftwares.length > 1 ? 's' : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCategoryFilter('All');
+                    setLicenseFilter('All');
+                    setPlatformFilter('All');
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-brand-steel hover:text-brand-navy"
                 >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c === 'All' ? 'Toutes' : c}
-                    </option>
-                  ))}
-                </select>
+                  Reinitialiser les filtres
+                </button>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredSoftwares.map((soft) => (
-                <SoftwareCard
-                  key={soft.id}
-                  software={soft}
-                  onClick={() => setSelectedSoftware(soft)}
-                />
-              ))}
-            </div>
+            {filteredSoftwares.length === 0 ? (
+              <div className="rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+                Aucun logiciel ne correspond aux filtres actuels.
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredSoftwares.map((soft) => (
+                  <SoftwareCard
+                    key={soft.id}
+                    software={soft}
+                    onClick={() => setSelectedSoftware(soft)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -652,6 +798,9 @@ const Tools: React.FC = () => {
                   </div>
                   <div>
                     <Badge color="navy">{selectedSoftware.category}</Badge>
+                    <Badge color="mono" className="ml-2">
+                      {getLicenseLabel(selectedSoftware.license)}
+                    </Badge>
                     {selectedSoftware.vendor && (
                       <p className="mt-1 text-[11px] font-mono uppercase text-slate-400">
                         {selectedSoftware.vendor}

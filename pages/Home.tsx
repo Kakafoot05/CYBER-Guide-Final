@@ -451,6 +451,8 @@ const Home: React.FC = () => {
                     className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain relative z-10 brightness-110 contrast-125 saturate-110 drop-shadow-[0_0_26px_rgba(142,182,240,0.4)]"
                     width={888}
                     height={290}
+                    loading="eager"
+                    fetchPriority="high"
                     decoding="async"
                   />
                 </div>
