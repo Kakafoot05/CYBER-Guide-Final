@@ -37,7 +37,7 @@ export const guides: GuidePillar[] = [
       'Plan defensif concret pour reduire les mouvements lateraux, proteger Tier 0 et renforcer la resilience AD.',
     category: 'Identity & Infrastructure',
     readTime: '12 min',
-    updatedDate: '2026-02-06',
+    updatedDate: '2026-02-08',
     keywords: [
       'active directory security',
       'tiering ad',
@@ -114,7 +114,7 @@ export const guides: GuidePillar[] = [
       'Playbook de preparation et de reponse pour reduire le temps de crise, proteger les sauvegardes et restaurer plus vite.',
     category: 'Incident Response',
     readTime: '11 min',
-    updatedDate: '2026-02-06',
+    updatedDate: '2026-01-28',
     keywords: [
       'ransomware readiness',
       'incident response ransomware',
@@ -191,7 +191,7 @@ export const guides: GuidePillar[] = [
       'Feuille de route pragmatique pour aligner gouvernance, gestion de risque et obligations de notification NIS2.',
     category: 'Governance & Compliance',
     readTime: '10 min',
-    updatedDate: '2026-02-06',
+    updatedDate: '2026-02-03',
     keywords: [
       'nis2 compliance',
       'cyber governance',

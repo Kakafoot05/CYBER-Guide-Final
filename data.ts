@@ -2294,7 +2294,7 @@ Mesures immédiates en cours : confinement, collecte des preuves, stabilisation 
 - Toute communication externe est gelée jusqu’à validation (Juridique/Comms).
 - Priorité : sécurité des preuves + continuité d’activité.`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-08',
     disclaimers: ["Usage interne. Adapter aux procédures de gestion de crise de l'organisation."],
   },
   {
@@ -2397,7 +2397,7 @@ Mesures immédiates en cours : confinement, collecte des preuves, stabilisation 
 ## 6) Décisions attendues
 {{decisions_needed}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-05',
     disclaimers: ['Document décisionnel. Ne pas diffuser hors cercle de gestion de crise.'],
   },
   {
@@ -2450,7 +2450,7 @@ Nous avons identifié un risque lié à **{{incident_type}}**.
 ## Besoin d’aide ?
 Contact : **{{support_contact}}**`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-29',
     disclaimers: ['Message à envoyer via canal officiel (mail interne / Teams / intranet).'],
   },
   {
@@ -2522,7 +2522,7 @@ Bonjour,
 ## Contact
 {{contact_point}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-24',
     disclaimers: ['Modèle générique. Valider avec Juridique/Communication avant diffusion.'],
   },
   {
@@ -2661,7 +2661,7 @@ Bonjour,
       { name: 'RGPD / GDPR', note: 'Notification de violation de données (articles applicables)' },
       { name: 'CNIL', note: 'Recommandations et téléservice de notification' },
     ],
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-09',
     disclaimers: [
       'Ce modèle n’est pas un avis juridique. Les délais et exigences peuvent varier selon le contexte. Validation Juridique obligatoire.',
     ],
@@ -2721,7 +2721,7 @@ Nous restons mobilisés pour protéger nos clients et nos opérations : **{{cust
 
 Contact presse : {{contact_email}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-18',
     disclaimers: ['À faire valider par Juridique/Comms. Ne pas spéculer.'],
   },
   {
@@ -2749,7 +2749,7 @@ Contact presse : {{contact_email}}`,
 - Utiliser des horodatages cohérents (UTC si possible).
 - Documenter toute manipulation (copie, analyse, transfert).`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-15',
     disclaimers: ['Modèle DFIR. Adapter aux procédures internes.'],
   },
   {
@@ -2852,7 +2852,7 @@ Contact presse : {{contact_email}}`,
 ## 8) Plan d’action (owners & deadlines)
 {{owners_deadlines}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-31',
     disclaimers: ['Document d’amélioration continue. Partager en interne selon classification.'],
   },
   {
@@ -2910,7 +2910,7 @@ Réduire le risque de compromission de comptes via exigences MFA et bonnes prati
 ## Exceptions
 Toute exception doit être justifiée et documentée via : {{exceptions_process}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2025-12-22',
     disclaimers: [
       'Modèle synthèse. La politique détaillée doit inclure rôles, audits, et cycle de revue.',
     ],
@@ -2975,7 +2975,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 - Sous-traitants impliqués ? Liste + localisation.
 - Conditions d’effacement / restitution des données en fin de contrat.`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-11',
     disclaimers: [
       'Modèle de présélection. Pour services critiques, utiliser un questionnaire étendu + annexes contractuelles.',
     ],
@@ -3074,7 +3074,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 - Approbateur métier : {{approver_name}}
 - Validation sécurité : {{security_reviewer}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-27',
     disclaimers: ['Toute élévation d’accès doit être temporaire, traçable et révoquée à échéance.'],
   },
   {
@@ -3177,7 +3177,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 - [ ] Refusée
 - [ ] À réviser`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-30',
     disclaimers: ['Toute exception doit avoir une durée limitée, un owner et une date de revue.'],
   },
   {
@@ -3270,7 +3270,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 ## Parties prenantes externes
 {{stakeholders_external}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-04',
     disclaimers: ['Toute communication externe doit être validée juridiquement avant diffusion.'],
   },
   {
@@ -3378,7 +3378,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 - [ ] Transférer
 - [ ] Éviter`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-20',
   },
   {
     id: 'tpl-015',
@@ -3464,7 +3464,7 @@ Toute exception doit être justifiée et documentée via : {{exceptions_process}
 - Responsable : {{recovery_owner}}
 - Escalade : {{escalation_path}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-02',
   },
   {
     id: 'tpl-016',
@@ -3533,7 +3533,7 @@ Cette politique définit les règles minimales d’usage des ressources informat
 ## 6) Assistance
 Contact : {{support_contact}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2025-12-14',
   },
   {
     id: 'tpl-017',
@@ -3608,7 +3608,7 @@ Contact : {{support_contact}}`,
 ## Exceptions
 {{exceptions_process}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-13',
   },
   {
     id: 'tpl-018',
@@ -3695,7 +3695,7 @@ Contact : {{support_contact}}`,
 ## 7) Escalade
 {{escalation_contact}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-01-26',
     disclaimers: [
       'Ce modèle n’est pas un avis juridique. Adapter les obligations de conservation et de notification au cadre réglementaire applicable.',
     ],
@@ -3799,7 +3799,7 @@ Contact : {{support_contact}}`,
 - Écarts identifiés
 - Plan d’actions avec owners et échéances`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-06',
   },
   {
     id: 'tpl-020',
@@ -3893,7 +3893,7 @@ Suite à un incident de sécurité potentiellement lié à vos services, {{compa
 
 Merci d’adresser votre réponse à : {{contact_point}}`,
     references: templateReferenceBase,
-    updatedAt: '2026-02-07',
+    updatedAt: '2026-02-03',
     disclaimers: ['Modèle de coordination tiers. Adapter aux clauses contractuelles en vigueur.'],
   },
 ];
@@ -3907,7 +3907,7 @@ export const projects: Project[] = [
       'Plateforme open source de detection, supervision et reponse securite pour centraliser les evenements endpoint/cloud et accelerer le triage SOC.',
     technologies: ['Wazuh', 'Elastic', 'Agent', 'MITRE ATT&CK'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 14 648 stars, 2 143 forks, 2 848 issues ouvertes.',
+      'Donnees verifiables (GitHub, 05/02/2026) : 14 648 stars, 2 143 forks, 2 848 issues ouvertes.',
     link: 'https://github.com/wazuh/wazuh',
     takeaways: [
       'Tres adapte pour une base SOC operationnelle avec visibilite endpoint + cloud.',
@@ -3923,7 +3923,7 @@ export const projects: Project[] = [
       'Distribution orientee SOC pour la detection reseau : NIDS, PCAP, enrichissement et investigation centralisee sur une meme pile.',
     technologies: ['Security Onion', 'Suricata', 'Zeek', 'Elastic'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 4 331 stars, 611 forks, 68 issues ouvertes.',
+      'Donnees verifiables (GitHub, 03/02/2026) : 4 331 stars, 611 forks, 68 issues ouvertes.',
     link: 'https://github.com/Security-Onion-Solutions/securityonion',
     takeaways: [
       'Reference solide pour une capacite NDR/NSM en environnement on-prem.',
@@ -3939,7 +3939,7 @@ export const projects: Project[] = [
       'Framework de reponse incident et de chasse endpoint pour collecter des preuves, lancer des requetes VQL et investiguer a grande echelle.',
     technologies: ['Velociraptor', 'VQL', 'DFIR', 'YARA'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 3 743 stars, 589 forks, 78 issues ouvertes.',
+      'Donnees verifiables (GitHub, 08/02/2026) : 3 743 stars, 589 forks, 78 issues ouvertes.',
     link: 'https://github.com/Velocidex/velociraptor',
     takeaways: [
       'Excellente brique pour les enquetes forensiques et la collecte live.',
@@ -3955,7 +3955,7 @@ export const projects: Project[] = [
       'Plateforme CTI open source pour consolider sources de renseignement, modeliser menaces en STIX et partager des indicateurs exploitables.',
     technologies: ['OpenCTI', 'STIX 2.1', 'TAXII', 'GraphQL'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 8 166 stars, 1 209 forks, 1 741 issues ouvertes.',
+      'Donnees verifiables (GitHub, 29/01/2026) : 8 166 stars, 1 209 forks, 1 741 issues ouvertes.',
     link: 'https://github.com/OpenCTI-Platform/opencti',
     takeaways: [
       'Convient pour passer d une veille passive a une intelligence actionnable.',
@@ -3971,7 +3971,7 @@ export const projects: Project[] = [
       'Standardiser les regles de detection dans un format portable pour les convertir vers plusieurs SIEM/EDR et accelerer le cycle detection -> production.',
     technologies: ['Sigma', 'YAML', 'SIEM', 'Detection as Code'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 10 098 stars, 2 531 forks, 85 issues ouvertes.',
+      'Donnees verifiables (GitHub, 07/02/2026) : 10 098 stars, 2 531 forks, 85 issues ouvertes.',
     link: 'https://github.com/SigmaHQ/sigma',
     takeaways: [
       'Reference de fait pour versionner et partager des detections defensives.',
@@ -3987,7 +3987,7 @@ export const projects: Project[] = [
       "Moteur IDS/IPS haute performance pour detection reseau, inspection protocolaire et production d'evenements structures EVE JSON.",
     technologies: ['Suricata', 'IDS/IPS', 'EVE JSON', 'Lua'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 5 985 stars, 1 659 forks, 58 issues ouvertes.',
+      'Donnees verifiables (GitHub, 04/02/2026) : 5 985 stars, 1 659 forks, 58 issues ouvertes.',
     link: 'https://github.com/OISF/suricata',
     takeaways: [
       'Pilier reseau pour detecter TTPs et comportements anormaux en perimetre.',
@@ -4003,7 +4003,7 @@ export const projects: Project[] = [
       'Plateforme de simulation d attaques basee ATT&CK pour valider les controles defensifs, tester les detections et mesurer la couverture SOC.',
     technologies: ['MITRE CALDERA', 'ATT&CK', 'Python', 'Agents'],
     result:
-      'Donnees verifiables (GitHub, 06/02/2026) : 6 729 stars, 1 282 forks, 62 issues ouvertes.',
+      'Donnees verifiables (GitHub, 02/02/2026) : 6 729 stars, 1 282 forks, 62 issues ouvertes.',
     link: 'https://github.com/mitre/caldera',
     takeaways: [
       'Permet des exercices repetables pour verifier la detection et la reponse.',
