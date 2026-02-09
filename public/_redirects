@@ -1,1 +1,16 @@
-/* /index.html 200
+/ /index.html 200
+/analyses /index.html 200
+/analyses/* /index.html 200
+/guides /index.html 200
+/guides/* /index.html 200
+/projets /index.html 200
+/outils /index.html 200
+/templates /index.html 200
+/templates/* /index.html 200
+/playbooks /index.html 200
+/playbooks/* /index.html 200
+/sources /index.html 200
+/a-propos /index.html 200
+/contact /index.html 200
+/blog /index.html 200
+/blog/* /index.html 200
