@@ -273,35 +273,103 @@ const THREAT_FOCUS_CALENDAR: ThreatFocus[] = [
   },
 ];
 
-type RadarKey = keyof ThreatFocus['radar'];
+type PrioritizationKey = keyof ThreatFocus['radar'];
 
-const RADAR_AXES: { key: RadarKey; label: string; valueClassName: string }[] = [
-  { key: 'surface', label: 'Surface', valueClassName: 'text-brand-navy' },
-  { key: 'exploitability', label: 'Exploitabilité', valueClassName: 'text-brand-navy' },
-  { key: 'impact', label: 'Impact métier', valueClassName: 'text-brand-navy' },
-  { key: 'detection', label: 'Détection', valueClassName: 'text-brand-steel' },
-  { key: 'patchPriority', label: 'Priorité patch', valueClassName: 'text-brand-gold' },
-  { key: 'remediationReadiness', label: 'Remédiation', valueClassName: 'text-brand-steel' },
-];
-
-const RADAR_CENTER = 90;
-const RADAR_MAX_RADIUS = 68;
-const RADAR_LEVELS = [1, 0.75, 0.5, 0.25];
-
-const toRadarPoint = (index: number, scale: number) => {
-  const angle = -Math.PI / 2 + (index * Math.PI * 2) / RADAR_AXES.length;
-  const x = RADAR_CENTER + Math.cos(angle) * RADAR_MAX_RADIUS * scale;
-  const y = RADAR_CENTER + Math.sin(angle) * RADAR_MAX_RADIUS * scale;
-  return { x, y };
+type RiskBand = {
+  label: string;
+  actionWindow: string;
+  styleClassName: string;
 };
 
-const buildRadarPolygon = (scales: number[]) =>
-  scales
-    .map((scale, index) => {
-      const point = toRadarPoint(index, scale);
-      return `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
-    })
-    .join(' ');
+type RiskDriver = {
+  label: string;
+  value: number;
+};
+
+const COST_FACTOR_BY_SEVERITY: Record<ThreatFocus['severity'], number> = {
+  Critique: 1500,
+  Élevée: 900,
+  Moyenne: 450,
+};
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const computeOperationalRiskScore = (focus: ThreatFocus): number => {
+  const weightedRisk =
+    focus.radar.surface * 0.2 +
+    focus.radar.exploitability * 0.25 +
+    focus.radar.impact * 0.25 +
+    focus.radar.patchPriority * 0.2 +
+    (100 - focus.radar.detection) * 0.05 +
+    (100 - focus.radar.remediationReadiness) * 0.05;
+
+  return clamp(Math.round(weightedRisk), 1, 99);
+};
+
+const getRiskBand = (riskScore: number): RiskBand => {
+  if (riskScore >= 85) {
+    return {
+      label: 'Niveau critique',
+      actionWindow: 'Action immediate (24h)',
+      styleClassName: 'text-red-700 bg-red-50 border-red-200',
+    };
+  }
+
+  if (riskScore >= 70) {
+    return {
+      label: 'Niveau eleve',
+      actionWindow: 'Action prioritaire (72h)',
+      styleClassName: 'text-orange-700 bg-orange-50 border-orange-200',
+    };
+  }
+
+  if (riskScore >= 55) {
+    return {
+      label: 'Niveau modere',
+      actionWindow: 'Action planifiee (7 jours)',
+      styleClassName: 'text-brand-steel bg-brand-pale/40 border-brand-steel/30',
+    };
+  }
+
+  return {
+    label: 'Niveau surveille',
+    actionWindow: 'Suivi renforce',
+    styleClassName: 'text-brand-navy bg-slate-50 border-slate-200',
+  };
+};
+
+const computeFinancialRange = (
+  riskScore: number,
+  severity: ThreatFocus['severity'],
+): { lower: number; upper: number } => {
+  const baseCost = riskScore * COST_FACTOR_BY_SEVERITY[severity];
+  return {
+    lower: Math.round(baseCost * 0.75),
+    upper: Math.round(baseCost * 1.55),
+  };
+};
+
+const formatKiloEuro = (value: number): string => {
+  const kilo = Math.max(1, Math.round(value / 1000));
+  return `${new Intl.NumberFormat('fr-FR').format(kilo)} k€`;
+};
+
+const buildTopRiskDrivers = (focus: ThreatFocus): RiskDriver[] => {
+  const drivers: Array<{ label: string; value: number }> = [
+    { label: 'Exposition internet', value: focus.radar.surface },
+    { label: 'Exploitabilite', value: focus.radar.exploitability },
+    { label: 'Impact metier', value: focus.radar.impact },
+    { label: 'Urgence de correction', value: focus.radar.patchPriority },
+    { label: 'Couverture detection insuffisante', value: 100 - focus.radar.detection },
+    {
+      label: 'Preparation remediation insuffisante',
+      value: 100 - focus.radar.remediationReadiness,
+    },
+  ];
+
+  return drivers.sort((left, right) => right.value - left.value).slice(0, 3);
+};
 
 const SEVERITY_BADGE_CLASSNAMES: Record<ThreatFocus['severity'], string> = {
   Critique: '!bg-red-500/20 !text-red-100 !border-red-300/30',
@@ -314,8 +382,10 @@ const Home: React.FC = () => {
   const now = new Date();
   const monthIndex = now.getMonth();
   const threatFocus = THREAT_FOCUS_CALENDAR[monthIndex];
-  const radarScales = RADAR_AXES.map((axis) => threatFocus.radar[axis.key] / 100);
-  const radarPolygonPoints = buildRadarPolygon(radarScales);
+  const riskScore = computeOperationalRiskScore(threatFocus);
+  const riskBand = getRiskBand(riskScore);
+  const financialRange = computeFinancialRange(riskScore, threatFocus.severity);
+  const topRiskDrivers = buildTopRiskDrivers(threatFocus);
   const monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
     .format(now)
     .replace(/^./, (char) => char.toUpperCase());
@@ -325,13 +395,13 @@ const Home: React.FC = () => {
   return (
     <>
       <Seo
-        title="Cyber Guide - Plateforme Blue Team"
-        description="Cyber Guide centralise analyses, templates et outils defensifs pour accelerer la maturite cyber des equipes Blue Team."
+        title="Cyber Guide - Cybersécurité opérationnelle"
+        description="Cyber Guide centralise analyses, templates et outils défensifs pour structurer la cybersécurité opérationnelle des organisations françaises."
         path="/"
         image="/assets/og/home.svg"
         keywords={[
           'cybersecurite',
-          'blue team',
+          'cybersecurite operationnelle',
           'templates cyber',
           'threat intelligence',
           'analyses cyber',
@@ -398,9 +468,9 @@ const Home: React.FC = () => {
 
               <Reveal delay={0.2}>
                 <p className="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed mb-10 border-l-2 border-brand-steel pl-6">
-                  Plateforme d'analyse, outils de triage et référentiels pour les équipes Blue Team.
-                  Structurez votre défense avec des templates opérationnels validés par les
-                  standards.
+                  Plateforme d'analyse, de triage et de procédures pour les équipes cybersécurité
+                  opérationnelle. Structurez votre défense avec des templates alignés sur les
+                  standards et référentiels fiables.
                 </p>
                 <div className="mb-8 flex flex-wrap gap-2">
                   {['Defensif uniquement', 'Guides actionnables', 'Basee sur standards'].map(
@@ -492,76 +562,61 @@ const Home: React.FC = () => {
                         <div className="mb-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-slate-500">
                           <span className="inline-flex items-center gap-1">
                             <Activity size={11} className="text-brand-steel" />
-                            Radar de priorisation
+                            Indice risque du mois
                           </span>
                           <span>{threatFocus.cve}</span>
                         </div>
 
-                        <div className="grid grid-cols-[1.2fr_1fr] gap-3 items-center">
-                          <svg viewBox="0 0 180 180" className="w-full h-[170px]">
-                            {RADAR_LEVELS.map((level) => (
-                              <polygon
-                                key={level}
-                                points={buildRadarPolygon(RADAR_AXES.map(() => level))}
-                                fill="none"
-                                stroke="#dbe4f1"
-                                strokeWidth="1"
-                              />
-                            ))}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-1 rounded-sm border border-brand-navy/20 bg-brand-pale/30 px-2 py-2 text-center">
+                            <p className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
+                              Score
+                            </p>
+                            <p className="mt-1 text-3xl font-display font-bold text-brand-navy">
+                              {riskScore}
+                            </p>
+                            <p className="text-[10px] text-slate-500">/100</p>
+                          </div>
 
-                            {RADAR_AXES.map((_, index) => {
-                              const axisPoint = toRadarPoint(index, 1);
-                              return (
-                                <line
-                                  key={`axis-${index}`}
-                                  x1={RADAR_CENTER}
-                                  y1={RADAR_CENTER}
-                                  x2={axisPoint.x}
-                                  y2={axisPoint.y}
-                                  stroke="#e2e8f0"
-                                  strokeWidth="1"
-                                />
-                              );
-                            })}
-
-                            <polygon
-                              points={radarPolygonPoints}
-                              fill="rgba(47,94,166,0.20)"
-                              stroke="#2F5EA6"
-                              strokeWidth="2"
-                            />
-
-                            {radarScales.map((scale, index) => {
-                              const point = toRadarPoint(index, scale);
-                              return (
-                                <circle
-                                  key={`point-${index}`}
-                                  cx={point.x}
-                                  cy={point.y}
-                                  r="2.5"
-                                  fill="#2F5EA6"
-                                />
-                              );
-                            })}
-                          </svg>
-
-                          <div className="space-y-1.5 text-[11px]">
-                            {RADAR_AXES.map((axis) => (
-                              <div
-                                key={axis.key}
-                                className="flex items-center justify-between rounded-sm border border-slate-100 bg-slate-50 px-2 py-1"
-                              >
-                                <span className="text-slate-500">{axis.label}</span>
-                                <strong className={axis.valueClassName}>
-                                  {threatFocus.radar[axis.key]}
-                                </strong>
-                              </div>
-                            ))}
+                          <div
+                            className={`col-span-2 rounded-sm border px-2 py-2 ${riskBand.styleClassName}`}
+                          >
+                            <p className="text-[10px] font-mono uppercase tracking-wide">
+                              Lecture rapide
+                            </p>
+                            <p className="mt-1 text-sm font-bold">{riskBand.label}</p>
+                            <p className="text-xs">{riskBand.actionWindow}</p>
+                            <p className="mt-2 text-[10px] leading-relaxed">
+                              Plus le score est proche de 100, plus le risque opérationnel est
+                              élevé.
+                            </p>
                           </div>
                         </div>
-                        <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
-                          Indice interne (0-100) pour prioriser patching et mesures compensatoires.
-                        </p>
+
+                        <div className="mt-2 rounded-sm border border-slate-200 bg-slate-50 px-2 py-2">
+                          <p className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
+                            Impact financier indicatif (24h-72h)
+                          </p>
+                          <p className="mt-1 text-lg font-display font-bold text-brand-navy">
+                            {formatKiloEuro(financialRange.lower)} - {formatKiloEuro(financialRange.upper)}
+                          </p>
+                          <p className="text-[10px] leading-relaxed text-slate-500">
+                            Estimation pédagogique pour prioriser. A adapter à votre contexte
+                            métier.
+                          </p>
+                        </div>
+
+                        <ul className="mt-2 space-y-1 text-[11px] text-slate-600">
+                          {topRiskDrivers.map((driver, index) => (
+                            <li key={driver.label} className="flex items-start gap-2">
+                              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                              <span>
+                                Facteur {index + 1}: <strong>{driver.label}</strong> ({driver.value}
+                                /100)
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -591,7 +646,7 @@ const Home: React.FC = () => {
 
                       <div className="rounded-sm border border-slate-200 bg-white p-3">
                         <div className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
-                          Action Blue Team recommandée
+                          Action operationnelle recommandee
                         </div>
                         <p className="mt-1 text-sm leading-relaxed text-brand-navy">
                           {threatFocus.recommendedAction}

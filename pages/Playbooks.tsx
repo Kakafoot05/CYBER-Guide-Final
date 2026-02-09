@@ -708,8 +708,8 @@ const Playbooks: React.FC = () => {
       <Seo
         title={
           selectedPlaybook
-            ? `${selectedPlaybook.title} | Playbook Blue Team`
-            : 'Playbooks Blue Team'
+            ? `${selectedPlaybook.title} | Playbook opérationnel`
+            : 'Playbooks opérationnels'
         }
         description={
           selectedPlaybook
@@ -718,7 +718,13 @@ const Playbooks: React.FC = () => {
         }
         path={selectedPlaybook ? `/playbooks/${selectedPlaybook.id}` : '/playbooks'}
         image="/assets/og/playbooks.svg"
-        keywords={['playbook cyber', 'incident response', 'blue team', 'hardening', 'gouvernance']}
+        keywords={[
+          'playbook cyber',
+          'incident response',
+          'cybersecurite operationnelle',
+          'hardening',
+          'gouvernance',
+        ]}
         type={selectedPlaybook ? 'article' : 'website'}
         schema={playbooksSeoSchema}
       />
@@ -727,7 +733,7 @@ const Playbooks: React.FC = () => {
         <ShieldHeader
           title="Procedures & Playbooks"
           subtitle="Operations"
-          meta={[`${playbooks.length} Referentiels`, 'Actionnable', 'Blue Team']}
+          meta={[`${playbooks.length} Referentiels`, 'Actionnable', 'Cyber operationnelle']}
         />
       </div>
 

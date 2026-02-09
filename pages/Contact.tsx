@@ -3,8 +3,11 @@ import { ShieldHeader, BlueprintPanel, Button } from '../components/UI';
 import { Mail, Send, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { Seo } from '../components/Seo';
 
+const FORM_TIMEOUT_MS = 10000;
+
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
+    firstName: '',
     name: '',
     email: '',
     subject: '',
@@ -17,8 +20,10 @@ const Contact: React.FC = () => {
   // Anti-spam time check: reject if submitted too fast (< 3 seconds)
   const mountTime = useRef(Date.now());
 
-  const buildMailtoUrl = () =>
-    `mailto:contact@cyber-guide.fr?subject=[CONTACT] ${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(formData.message)}%0A%0ADe: ${encodeURIComponent(formData.name)} (${encodeURIComponent(formData.email)})`;
+  const buildMailtoUrl = () => {
+    const fullName = `${formData.firstName} ${formData.name}`.trim();
+    return `mailto:contact@cyber-guide.fr?subject=[CONTACT] ${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(formData.message)}%0A%0ADe: ${encodeURIComponent(fullName)} (${encodeURIComponent(formData.email)})`;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (status === 'error') {
@@ -28,6 +33,14 @@ const Contact: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
+    if (formData.firstName.trim().length < 2) {
+      setErrorMessage('Le prénom est requis.');
+      return false;
+    }
+    if (formData.name.trim().length < 2) {
+      setErrorMessage('Le nom est requis.');
+      return false;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       setErrorMessage('Adresse email invalide.');
       return false;
@@ -62,43 +75,86 @@ const Contact: React.FC = () => {
     setStatus('loading');
 
     // 3. Submission logic
-    const endpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT;
+    const endpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT?.trim();
 
     if (endpoint) {
+      if (endpoint.includes('<id>')) {
+        setStatus('error');
+        setErrorMessage("Endpoint Formspree invalide. Remplacez '<id>' par votre ID réel.");
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), FORM_TIMEOUT_MS);
+
       try {
+        const payload = new FormData();
+        payload.append('firstName', formData.firstName);
+        payload.append('name', formData.name);
+        payload.append('email', formData.email);
+        payload.append('subject', formData.subject);
+        payload.append('message', formData.message);
+
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            subject: formData.subject,
-            message: formData.message,
-          }),
+          headers: {
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+          body: payload,
         });
 
         if (response.ok) {
           setStatus('success');
-          setFormData({ name: '', email: '', subject: '', message: '', honeypot: '' });
-        } else {
-          throw new Error('Erreur serveur');
+          setFormData({
+            firstName: '',
+            name: '',
+            email: '',
+            subject: '',
+            message: '',
+            honeypot: '',
+          });
+          return;
         }
-      } catch {
-        // Fallback transparent si l'API échoue
+
+        let formspreeError = '';
+        try {
+          const responseData: unknown = await response.json();
+          if (responseData && typeof responseData === 'object') {
+            const withErrors = responseData as {
+              errors?: Array<{ message?: string }>;
+              error?: string;
+            };
+
+            if (Array.isArray(withErrors.errors) && withErrors.errors[0]?.message) {
+              formspreeError = withErrors.errors[0].message;
+            } else if (typeof withErrors.error === 'string') {
+              formspreeError = withErrors.error;
+            }
+          }
+        } catch {
+          // Ignore body parsing issue and keep status fallback.
+        }
+
+        throw new Error(formspreeError || `Erreur formulaire (${response.status})`);
+      } catch (error) {
+        const timeoutError = error instanceof DOMException && error.name === 'AbortError';
+        setStatus('error');
         setErrorMessage(
-          'Le service de formulaire est indisponible. Ouverture de votre client mail...',
+          timeoutError
+            ? "Le service de formulaire ne répond pas (timeout). Réessayez ou utilisez l'email direct."
+            : error instanceof Error && error.message
+              ? `Envoi impossible: ${error.message}`
+              : "Le service de formulaire est indisponible. Réessayez ou utilisez l'email direct.",
         );
-        window.setTimeout(() => {
-          window.location.assign(buildMailtoUrl());
-          setStatus('idle');
-        }, 1200);
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     } else {
-      // Fallback immédiat: Mailto
-      window.setTimeout(() => {
-        window.location.assign(buildMailtoUrl());
-        setStatus('idle');
-      }, 700);
+      setStatus('error');
+      setErrorMessage(
+        "Le formulaire n'est pas configuré. Ajoutez VITE_FORMSPREE_ENDPOINT ou utilisez l'email direct.",
+      );
     }
   };
 
@@ -109,7 +165,7 @@ const Contact: React.FC = () => {
         description="Contactez Cyber Guide pour une question sur les analyses, templates ou outils defensifs."
         path="/contact"
         image="/assets/og/contact.svg"
-        keywords={['contact cyber', 'blue team', 'support cyber guide']}
+        keywords={['contact cyber', 'cybersecurite operationnelle', 'support cyber guide']}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'ContactPage',
@@ -175,24 +231,41 @@ const Contact: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Nom
+                        Prénom *
                       </label>
                       <input
                         type="text"
-                        name="name"
+                        name="firstName"
                         required
-                        autoComplete="name"
+                        autoComplete="given-name"
                         className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel focus:ring-1 focus:ring-brand-steel outline-none text-sm"
-                        value={formData.name}
+                        value={formData.firstName}
                         onChange={handleChange}
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Email
+                        Nom *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        autoComplete="family-name"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel focus:ring-1 focus:ring-brand-steel outline-none text-sm"
+                        value={formData.name}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
+                        Email *
                       </label>
                       <input
                         type="email"
@@ -204,27 +277,27 @@ const Contact: React.FC = () => {
                         onChange={handleChange}
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                      Sujet
-                    </label>
-                    <select
-                      name="subject"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel outline-none text-sm bg-white"
-                      value={formData.subject}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, subject: e.target.value }))
-                      }
-                      required
-                    >
-                      <option value="">Sélectionner un sujet...</option>
-                      <option value="Demande de démo">Demande de démo / Outils</option>
-                      <option value="Question Analyse">Question sur une analyse</option>
-                      <option value="Erreur / Bug">Signalement d'erreur</option>
-                      <option value="Autre">Autre demande</option>
-                    </select>
+                    <div>
+                      <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
+                        Sujet *
+                      </label>
+                      <select
+                        name="subject"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel outline-none text-sm bg-white"
+                        value={formData.subject}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, subject: e.target.value }))
+                        }
+                        required
+                      >
+                        <option value="">Sélectionner un sujet...</option>
+                        <option value="Demande de démo">Demande de démo / Outils</option>
+                        <option value="Question Analyse">Question sur une analyse</option>
+                        <option value="Erreur / Bug">Signalement d'erreur</option>
+                        <option value="Autre">Autre demande</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -249,7 +322,14 @@ const Contact: React.FC = () => {
                       className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 rounded-sm"
                     >
                       <AlertTriangle size={14} />
-                      {errorMessage || 'Une erreur est survenue.'}
+                      <span>{errorMessage || 'Une erreur est survenue.'}</span>
+                      <button
+                        type="button"
+                        className="ml-auto font-bold underline"
+                        onClick={() => window.location.assign(buildMailtoUrl())}
+                      >
+                        Ouvrir email
+                      </button>
                     </div>
                   )}
 

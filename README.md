@@ -1,6 +1,6 @@
 # Cyber Guide
 
-Plateforme front-end orientee Blue Team: analyses, playbooks et outils defensifs.
+Plateforme front-end orientee cybersécurité operationnelle: analyses, playbooks et outils defensifs.
 
 ## Stack
 

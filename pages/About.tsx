@@ -11,7 +11,7 @@ const About: React.FC = () => {
         description="Cyber Guide detaille son cadre defensif, sa methodologie et ses engagements de transparence."
         path="/a-propos"
         image="/assets/og/about.svg"
-        keywords={['cyber guide', 'mission', 'ethique cyber', 'blue team']}
+        keywords={['cyber guide', 'mission', 'ethique cyber', 'cybersecurite operationnelle']}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'AboutPage',
@@ -33,8 +33,8 @@ const About: React.FC = () => {
           </h2>
           <p className="text-lg text-slate-700 leading-relaxed mb-6">
             CYBER GUIDE n'est pas une agence, ni un cabinet de conseil. C'est une plateforme de
-            ressources opérationnelles destinée aux équipes de défense (Blue Teams) et aux décideurs
-            IT des PME et ETI.
+            ressources opérationnelles destinée aux équipes cybersécurité des PME/ETI et aux
+            décideurs IT.
           </p>
           <p className="text-slate-600 leading-relaxed">
             Notre objectif est de traduire les tendances macro-économiques de la menace en plans

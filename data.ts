@@ -3910,7 +3910,7 @@ export const projects: Project[] = [
       'Donnees verifiables (GitHub, 06/02/2026) : 14 648 stars, 2 143 forks, 2 848 issues ouvertes.',
     link: 'https://github.com/wazuh/wazuh',
     takeaways: [
-      'Tres adapte pour une base SOC blue team avec visibilite endpoint + cloud.',
+      'Tres adapte pour une base SOC operationnelle avec visibilite endpoint + cloud.',
       'Permet de mapper detections et alertes sur MITRE ATT&CK.',
       "Projet mature avec une communaute active et une cadence d'evolution elevee.",
     ],
@@ -4025,7 +4025,7 @@ export const blogPosts: BlogPost[] = [
     updatedDate: '2025-10-14',
     readTime: '5 min',
     category: 'Incident',
-    tags: ['phishing', 'post-mortem', 'blue team', 'email security'],
+    tags: ['phishing', 'post-mortem', 'soc', 'email security'],
     content: [
       "Cette campagne a ciblé des équipes finance et RH avec des emails imitant des workflows de validation interne. Les messages combinaient urgence opérationnelle et pièces jointes pseudo-administratives pour pousser l'utilisateur à agir rapidement.",
       "L'analyse des en-têtes montre des chaînes de relais incohérentes, des domaines proches du domaine légitime et des tentatives répétées de contournement DMARC via des sous-domaines peu surveillés. Le scénario principal reposait sur la collecte d'identifiants puis la persistance via règles de boîte mail.",

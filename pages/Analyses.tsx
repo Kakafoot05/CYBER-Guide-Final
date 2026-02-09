@@ -87,13 +87,13 @@ const Analyses: React.FC = () => {
     <div className="min-h-screen bg-slate-50 pb-32">
       <Seo
         title="Analyses Cyber Defensives"
-        description="Bibliotheque d'analyses Blue Team: identity, AD, ransomware, conformite et posture defensive."
+        description="Bibliotheque d'analyses en cybersécurité opérationnelle: identite, AD, ransomware, conformite et posture defensive."
         path="/analyses"
         image="/assets/og/analyses.svg"
         keywords={[
           'analyse cyber',
           'threat intelligence',
-          'blue team',
+          'cybersecurite operationnelle',
           'ransomware',
           'active directory',
         ]}

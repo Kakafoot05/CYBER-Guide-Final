@@ -86,8 +86,8 @@ const StackEcosystem: React.FC = () => {
           Ecosysteme logiciels
         </h3>
         <p className="mx-auto max-w-3xl text-sm text-slate-600">
-          Selection d'outils utilises dans des parcours Blue Team realistes: prevention, detection,
-          investigation et remediations.
+          Selection d'outils utilises dans des parcours cybersécurité operationnelle: prevention,
+          detection, investigation et remediations.
         </p>
         <div className="mx-auto mt-3 h-0.5 w-12 bg-brand-steel"></div>
       </div>
@@ -471,11 +471,11 @@ const Tools: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
-        title="Outils Blue Team et Logiciels Cyber"
+        title="Outils Cyber et Logiciels Operationnels"
         description="Catalogue d'outils defensifs: demos interactives, triage, investigation et selection de logiciels cyber."
         path="/outils"
         image="/assets/og/tools.svg"
-        keywords={['outils cyber', 'blue team', 'DFIR', 'triage', 'investigation']}
+        keywords={['outils cyber', 'cybersecurite operationnelle', 'DFIR', 'triage', 'investigation']}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',

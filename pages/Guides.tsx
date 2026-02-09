@@ -10,12 +10,12 @@ const Guides: React.FC = () => {
     <div className="min-h-screen bg-slate-50 pb-32">
       <Seo
         title="Guides Piliers Cyber"
-        description="Guides stratégiques Blue Team: Active Directory, reponse ransomware et conformite NIS2."
+        description="Guides strategiques de cybersécurité opérationnelle: Active Directory, reponse ransomware et conformite NIS2."
         path="/guides"
         image="/assets/og/guides.svg"
         keywords={[
           'guide cyber',
-          'blue team guide',
+          'guide cyber operationnel',
           'active directory security',
           'ransomware response',
           'nis2 roadmap',
@@ -40,7 +40,7 @@ const Guides: React.FC = () => {
       <ShieldHeader
         title="Guides Piliers"
         subtitle="Base Methodologique"
-        meta={[`${guides.length} guides`, 'Parcours Blue Team', 'Defense operationnelle']}
+        meta={[`${guides.length} guides`, 'Parcours operationnels', 'Defense operationnelle']}
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

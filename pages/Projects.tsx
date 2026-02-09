@@ -156,7 +156,8 @@ const getProjectBriefing = (project: Project): ProjectBriefing =>
   PROJECT_BRIEFINGS[project.id] ?? {
     summary: project.objective,
     primaryUse: project.context,
-    operationalValue: project.takeaways?.[0] ?? 'Renforce les capacites defensives blue team.',
+    operationalValue:
+      project.takeaways?.[0] ?? 'Renforce les capacites defensives en cybersécurité operationnelle.',
     workflow: [
       'Qualifier le besoin operationnel',
       'Deployer le projet sur le perimetre prioritaire',
@@ -227,10 +228,10 @@ const Projects: React.FC = () => {
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
         title="Projets et Operations Cyber"
-        description="Retours d'experience et operations Blue Team: threat hunting, durcissement AD et actions defensives."
+        description="Retours d'experience et operations de cybersécurité: threat hunting, durcissement AD et actions defensives."
         path="/projets"
         image="/assets/og/projects.svg"
-        keywords={['projets cyber', 'threat hunting', 'active directory', 'blue team']}
+        keywords={['projets cyber', 'threat hunting', 'active directory', 'cybersecurite operationnelle']}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
@@ -491,7 +492,7 @@ const Projects: React.FC = () => {
                     <p className="text-xs text-slate-600 leading-relaxed">
                       {selectedBriefing?.operationalValue ??
                         selectedProject.takeaways?.[0] ??
-                        'Renforce la maturite cyber blue team.'}
+                        'Renforce la maturite cyber operationnelle.'}
                     </p>
                   </div>
                   <div className="rounded-sm border border-slate-200 bg-white p-3">

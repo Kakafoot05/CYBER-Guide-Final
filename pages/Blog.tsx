@@ -13,7 +13,7 @@ const Blog: React.FC = () => {
         description="Journal technique Cyber Guide: analyses d'incident, retours terrain et notes de recherche defensive."
         path="/blog"
         image="/assets/og/blog.svg"
-        keywords={['blog cyber', 'retour d experience', 'incident response', 'blue team']}
+        keywords={['blog cyber', 'retour d experience', 'incident response', 'cybersecurite operationnelle']}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'Blog',

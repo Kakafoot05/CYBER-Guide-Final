@@ -194,8 +194,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 Mission
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Plateforme d'analyse et d'outillage defensif pour les equipes SOC/Blue Team.
-                Priorite: parcours actionnables, standards fiables et execution operationnelle.
+                Plateforme d'analyse et d'outillage defensif pour les equipes cyber operationnelles.
+                Priorite: parcours actionnables, standards fiables et execution en conditions
+                reelles.
               </p>
               <div className="text-xs text-slate-500 font-mono">© 2026 CYBER GUIDE.</div>
             </div>
@@ -346,7 +347,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-xs text-slate-500 font-mono tracking-wide flex items-center gap-2">
-              <ShieldCheck size={14} /> STRICTEMENT DEFENSIF // BLUE TEAM
+              <ShieldCheck size={14} /> STRICTEMENT DEFENSIF // CYBER OPERATIONNELLE
             </div>
             <div className="flex items-center gap-6">
               <Link

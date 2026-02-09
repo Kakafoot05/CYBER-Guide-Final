@@ -223,7 +223,7 @@ sudo certbot renew --dry-run
 1. Chaque page doit avoir:
 
 - un `h1` unique
-- un angle "probleme -> action Blue Team"
+- un angle "probleme -> action cybersécurité operationnelle"
 - un maillage interne vers Guides/Playbooks/Analyses
 
 2. Ajouter 1 analyse neuve par semaine (fraicheur + autorite thematique).

@@ -30,16 +30,19 @@ describe('Contact form validation', () => {
     const user = userEvent.setup();
     const { container } = renderContact();
 
+    const firstNameInput = container.querySelector('input[name="firstName"]');
     const nameInput = container.querySelector('input[name="name"]');
     const emailInput = container.querySelector('input[name="email"]');
     const subjectSelect = container.querySelector('select[name="subject"]');
     const messageInput = container.querySelector('textarea[name="message"]');
 
+    expect(firstNameInput).toBeTruthy();
     expect(nameInput).toBeTruthy();
     expect(emailInput).toBeTruthy();
     expect(subjectSelect).toBeTruthy();
     expect(messageInput).toBeTruthy();
 
+    await user.type(firstNameInput as HTMLInputElement, 'Kamil');
     await user.type(nameInput as HTMLInputElement, 'Kamil');
     await user.type(emailInput as HTMLInputElement, 'kamil@example.com');
     await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre');
@@ -58,16 +61,19 @@ describe('Contact form validation', () => {
     const user = userEvent.setup();
     const { container } = renderContact();
 
+    const firstNameInput = container.querySelector('input[name="firstName"]');
     const nameInput = container.querySelector('input[name="name"]');
     const emailInput = container.querySelector('input[name="email"]');
     const subjectSelect = container.querySelector('select[name="subject"]');
     const messageInput = container.querySelector('textarea[name="message"]');
 
+    expect(firstNameInput).toBeTruthy();
     expect(nameInput).toBeTruthy();
     expect(emailInput).toBeTruthy();
     expect(subjectSelect).toBeTruthy();
     expect(messageInput).toBeTruthy();
 
+    await user.type(firstNameInput as HTMLInputElement, 'Kamil');
     await user.type(nameInput as HTMLInputElement, 'Kamil');
     await user.type(emailInput as HTMLInputElement, 'kamil@example.com');
     await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre');

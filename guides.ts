@@ -42,7 +42,7 @@ export const guides: GuidePillar[] = [
       'active directory security',
       'tiering ad',
       'hardening ad',
-      'blue team windows',
+      'securite windows',
       'tier 0',
     ],
     intro:
@@ -119,7 +119,7 @@ export const guides: GuidePillar[] = [
       'ransomware readiness',
       'incident response ransomware',
       'backup immutability',
-      'blue team crisis plan',
+      'plan de crise cyber',
       'pme cyber resilience',
     ],
     intro:
