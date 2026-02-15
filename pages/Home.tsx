@@ -1,11 +1,12 @@
 ﻿import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, BarChart3, Lock, FileText, BookOpen, Network, Activity } from 'lucide-react';
 import { Button, BlueprintPanel, Badge, TechSeparator } from '../components/UI';
 import { Reveal, StaggerContainer, StaggerItem } from '../components/Motion';
 import { Seo } from '../components/Seo';
 import { guides } from '../guides';
 import { softwares } from '../data';
+import { buildLocalizedPath, getLocaleFromPathname, type SupportedLocale } from '../utils/locale';
 
 type ThreatFocus = {
   cve: string;
@@ -307,34 +308,36 @@ const computeOperationalRiskScore = (focus: ThreatFocus): number => {
   return clamp(Math.round(weightedRisk), 1, 99);
 };
 
-const getRiskBand = (riskScore: number): RiskBand => {
+const getRiskBand = (riskScore: number, locale: SupportedLocale): RiskBand => {
+  const isEnglish = locale === 'en';
+
   if (riskScore >= 85) {
     return {
-      label: 'Niveau critique',
-      actionWindow: 'Action immediate (24h)',
+      label: isEnglish ? 'Critical level' : 'Niveau critique',
+      actionWindow: isEnglish ? 'Immediate action (24h)' : 'Action immediate (24h)',
       styleClassName: 'text-red-700 bg-red-50 border-red-200',
     };
   }
 
   if (riskScore >= 70) {
     return {
-      label: 'Niveau eleve',
-      actionWindow: 'Action prioritaire (72h)',
+      label: isEnglish ? 'High level' : 'Niveau eleve',
+      actionWindow: isEnglish ? 'Priority action (72h)' : 'Action prioritaire (72h)',
       styleClassName: 'text-orange-700 bg-orange-50 border-orange-200',
     };
   }
 
   if (riskScore >= 55) {
     return {
-      label: 'Niveau modere',
-      actionWindow: 'Action planifiee (7 jours)',
+      label: isEnglish ? 'Moderate level' : 'Niveau modere',
+      actionWindow: isEnglish ? 'Planned action (7 days)' : 'Action planifiee (7 jours)',
       styleClassName: 'text-brand-steel bg-brand-pale/40 border-brand-steel/30',
     };
   }
 
   return {
-    label: 'Niveau surveille',
-    actionWindow: 'Suivi renforce',
+    label: isEnglish ? 'Monitored level' : 'Niveau surveille',
+    actionWindow: isEnglish ? 'Enhanced monitoring' : 'Suivi renforce',
     styleClassName: 'text-brand-navy bg-slate-50 border-slate-200',
   };
 };
@@ -350,20 +353,28 @@ const computeFinancialRange = (
   };
 };
 
-const formatKiloEuro = (value: number): string => {
+const formatKiloEuro = (value: number, locale: SupportedLocale): string => {
   const kilo = Math.max(1, Math.round(value / 1000));
-  return `${new Intl.NumberFormat('fr-FR').format(kilo)} k€`;
+  const localeCode = locale === 'en' ? 'en-US' : 'fr-FR';
+  return `${new Intl.NumberFormat(localeCode).format(kilo)} k€`;
 };
 
-const buildTopRiskDrivers = (focus: ThreatFocus): RiskDriver[] => {
+const buildTopRiskDrivers = (focus: ThreatFocus, locale: SupportedLocale): RiskDriver[] => {
+  const isEnglish = locale === 'en';
   const drivers: Array<{ label: string; value: number }> = [
-    { label: 'Exposition internet', value: focus.radar.surface },
-    { label: 'Exploitabilite', value: focus.radar.exploitability },
-    { label: 'Impact metier', value: focus.radar.impact },
-    { label: 'Urgence de correction', value: focus.radar.patchPriority },
-    { label: 'Couverture detection insuffisante', value: 100 - focus.radar.detection },
+    { label: isEnglish ? 'Internet exposure' : 'Exposition internet', value: focus.radar.surface },
+    { label: isEnglish ? 'Exploitability' : 'Exploitabilite', value: focus.radar.exploitability },
+    { label: isEnglish ? 'Business impact' : 'Impact metier', value: focus.radar.impact },
     {
-      label: 'Preparation remediation insuffisante',
+      label: isEnglish ? 'Patch urgency' : 'Urgence de correction',
+      value: focus.radar.patchPriority,
+    },
+    {
+      label: isEnglish ? 'Detection coverage gap' : 'Couverture detection insuffisante',
+      value: 100 - focus.radar.detection,
+    },
+    {
+      label: isEnglish ? 'Remediation readiness gap' : 'Preparation remediation insuffisante',
       value: 100 - focus.radar.remediationReadiness,
     },
   ];
@@ -377,46 +388,189 @@ const SEVERITY_BADGE_CLASSNAMES: Record<ThreatFocus['severity'], string> = {
   Moyenne: '!bg-blue-500/20 !text-blue-100 !border-blue-300/30',
 };
 
+const getSeverityLabel = (severity: ThreatFocus['severity'], locale: SupportedLocale): string => {
+  if (locale === 'en') {
+    if (severity === 'Critique') return 'CRITICAL';
+    if (severity === 'Élevée') return 'HIGH';
+    return 'MEDIUM';
+  }
+
+  return severity.toUpperCase();
+};
+
 const Home: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const localizedAbsolutePath = (path: string): string =>
+    `https://cyber-guide.fr${buildLocalizedPath(path, locale)}`;
+
   const showcasedSoftwares = softwares.slice(0, 12);
   const now = new Date();
   const monthIndex = now.getMonth();
   const threatFocus = THREAT_FOCUS_CALENDAR[monthIndex];
   const riskScore = computeOperationalRiskScore(threatFocus);
-  const riskBand = getRiskBand(riskScore);
+  const riskBand = getRiskBand(riskScore, locale);
   const financialRange = computeFinancialRange(riskScore, threatFocus.severity);
-  const topRiskDrivers = buildTopRiskDrivers(threatFocus);
-  const monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+  const topRiskDrivers = buildTopRiskDrivers(threatFocus, locale);
+  const monthLabel = new Intl.DateTimeFormat(isEnglish ? 'en-US' : 'fr-FR', {
+    month: 'long',
+    year: 'numeric',
+  })
     .format(now)
     .replace(/^./, (char) => char.toUpperCase());
   const blueprintLabel = `THREAT_INDEX_${now.getFullYear()}`;
   const severityBadgeClassName = SEVERITY_BADGE_CLASSNAMES[threatFocus.severity];
+  const copy = isEnglish
+    ? {
+        seoTitle: 'Cyber Guide - Operational cybersecurity',
+        seoDescription:
+          'Cyber Guide centralizes analyses, templates, and defensive tooling to structure operational cybersecurity for organizations.',
+        inLanguage: 'en-US',
+        heroTitleLead: 'The Craft of',
+        heroTitleAccent: 'Operational Defense',
+        heroDescription:
+          'Analysis, triage, and procedure platform for operational cybersecurity teams. Structure your defense with templates aligned to reliable standards.',
+        chips: ['Defensive only', 'Actionable guides', 'Standards-based'],
+        analysesCta: 'Browse analyses',
+        templatesCta: 'Open templates',
+        guidesLink: 'Guides track',
+        toolsLink: 'Triage tooling',
+        vulnerabilityOfMonth: 'Vulnerability of the month',
+        productLabel: 'Product',
+        patchLabel: 'Patch',
+        monthRiskIndex: 'Monthly risk index',
+        quickRead: 'Quick read',
+        scoreHint: 'The closer to 100, the higher the operational risk.',
+        financialImpact: 'Estimated financial impact (24h-72h)',
+        financialHint: 'Educational estimate for prioritization. Adapt to your business context.',
+        factorLabel: 'Driver',
+        priorityPatchBadge: 'PRIORITY PATCH',
+        mainVector: 'Main vector',
+        recommendedAction: 'Recommended operational action',
+        editorialNote:
+          'Monthly Cyber Guide editorial selection to orient operational prioritization.',
+        monthlyCycle: 'MONTHLY CYCLE',
+        activeMonitoring: 'ACTIVE MONITORING',
+        strategicFiles: 'Strategic dossiers',
+        openDossier: 'OPEN DOSSIER',
+        viewAllDossiers: 'View all dossiers',
+        card1Title: 'Email, MFA & Identity',
+        card1Body: 'First line of defense. Analysis of MFA bypass and fatigue attack patterns.',
+        card2Title: 'Active Directory Tiering',
+        card2Body:
+          'T0/T1/T2 segmentation and privilege hardening to block lateral movement attempts.',
+        card3Title: 'Ransomware Readiness',
+        card3Body:
+          'Beyond backups: continuity, containment, and operational reconstruction planning.',
+        operationalGuides: 'Operational guides',
+        guidesIntro:
+          'Complete tracks to move from analysis to execution: Active Directory, ransomware, and NIS2 readiness.',
+        readGuide: 'Read guide',
+        viewAllGuides: 'View all guides',
+        softwareReferences: 'Reference software stack',
+        softwareDescription:
+          'Cyber Guide relies on recognized tools for detection, investigation, and remediation.',
+        softwareCatalog: 'View full software catalog',
+        monthVulnerabilityStat: 'Vulnerability of the month',
+        patchWindowStat: 'Recommended patch window',
+        attackVectorStat: 'Priority attack vector',
+        sourceFootnote: 'Source: consolidated CVE/NVD and vendor monitoring by Cyber Guide',
+      }
+    : {
+        seoTitle: 'Cyber Guide - Cybersécurité opérationnelle',
+        seoDescription:
+          'Cyber Guide centralise analyses, templates et outils défensifs pour structurer la cybersécurité opérationnelle des organisations françaises.',
+        inLanguage: 'fr-FR',
+        heroTitleLead: "L'Art de la Défense",
+        heroTitleAccent: 'Opérationnelle',
+        heroDescription:
+          "Plateforme d'analyse, de triage et de procédures pour les équipes cybersécurité opérationnelle. Structurez votre défense avec des templates alignés sur les standards et référentiels fiables.",
+        chips: ['Defensif uniquement', 'Guides actionnables', 'Basee sur standards'],
+        analysesCta: 'Consulter les analyses',
+        templatesCta: 'Ouvrir les templates',
+        guidesLink: 'Parcours guides',
+        toolsLink: 'Outils de triage',
+        vulnerabilityOfMonth: 'Vulnérabilité du mois',
+        productLabel: 'Produit',
+        patchLabel: 'Patch',
+        monthRiskIndex: 'Indice risque du mois',
+        quickRead: 'Lecture rapide',
+        scoreHint: 'Plus le score est proche de 100, plus le risque opérationnel est élevé.',
+        financialImpact: 'Impact financier indicatif (24h-72h)',
+        financialHint:
+          'Estimation pédagogique pour prioriser. A adapter à votre contexte métier.',
+        factorLabel: 'Facteur',
+        priorityPatchBadge: 'PATCH PRIORITAIRE',
+        mainVector: 'Vecteur principal',
+        recommendedAction: 'Action operationnelle recommandee',
+        editorialNote:
+          'Sélection éditoriale mensuelle Cyber Guide pour orienter la priorisation sécurité.',
+        monthlyCycle: 'CYCLE MENSUEL',
+        activeMonitoring: 'VEILLE ACTIVE',
+        strategicFiles: 'Dossiers Stratégiques',
+        openDossier: 'ACCÉDER AU DOSSIER',
+        viewAllDossiers: 'Voir tous les dossiers',
+        card1Title: 'Email, MFA & Identité',
+        card1Body:
+          'La première ligne de défense. Analyse des contournements MFA et fatigue attaques.',
+        card2Title: 'Active Directory Tiering',
+        card2Body:
+          'Segmentation T0/T1/T2 et durcissement des privilèges pour bloquer les mouvements latéraux.',
+        card3Title: 'Preparation Ransomware',
+        card3Body:
+          'Au-dela des sauvegardes: plans de reprise, confinement et reconstruction operationnelle.',
+        operationalGuides: 'Guides operationnels',
+        guidesIntro:
+          'Parcours complets pour passer de l analyse a l execution: Active Directory, ransomware et conformite NIS2.',
+        readGuide: 'Lire le guide',
+        viewAllGuides: 'Voir tous les guides',
+        softwareReferences: 'Logiciels de reference',
+        softwareDescription:
+          "Cyber Guide s'appuie sur un ecosysteme d'outils reconnus pour la detection, l'investigation et la remediation.",
+        softwareCatalog: 'Voir le catalogue logiciel complet',
+        monthVulnerabilityStat: 'Vulnerabilite du mois',
+        patchWindowStat: 'Fenetre de patch recommandee',
+        attackVectorStat: 'Vecteur d attaque prioritaire',
+        sourceFootnote: 'Source: CVE/NVD et veille editeur consolidees par Cyber Guide',
+      };
 
   return (
     <>
       <Seo
-        title="Cyber Guide - Cybersécurité opérationnelle"
-        description="Cyber Guide centralise analyses, templates et outils défensifs pour structurer la cybersécurité opérationnelle des organisations françaises."
-        path="/"
+        title={copy.seoTitle}
+        description={copy.seoDescription}
+        path={localizedPath('/')}
         image="/assets/og/home.svg"
-        keywords={[
-          'cybersecurite',
-          'cybersecurite operationnelle',
-          'templates cyber',
-          'threat intelligence',
-          'analyses cyber',
-          'NIS2',
-        ]}
+        keywords={
+          isEnglish
+            ? [
+                'operational cybersecurity',
+                'cyber templates',
+                'defensive cyber analysis',
+                'threat intelligence',
+                'nis2',
+              ]
+            : [
+                'cybersecurite',
+                'cybersecurite operationnelle',
+                'templates cyber',
+                'threat intelligence',
+                'analyses cyber',
+                'NIS2',
+              ]
+        }
         schema={[
           {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'Cyber Guide',
             url: 'https://cyber-guide.fr',
-            inLanguage: 'fr-FR',
+            inLanguage: copy.inLanguage,
             potentialAction: {
               '@type': 'SearchAction',
-              target: 'https://cyber-guide.fr/analyses?q={search_term_string}',
+              target: `${localizedAbsolutePath('/analyses')}?q={search_term_string}`,
               'query-input': 'required name=search_term_string',
             },
           },
@@ -461,35 +615,31 @@ const Home: React.FC = () => {
               <Reveal delay={0.1}>
                 {/* H1 Focus Produit (Pas de répétition du nom) */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white tracking-tight leading-[1.1] mb-8">
-                  L'Art de la Défense <br />
+                  {copy.heroTitleLead} <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-steel via-brand-light to-white">
-                    Opérationnelle
+                    {copy.heroTitleAccent}
                   </span>
                 </h1>
               </Reveal>
 
               <Reveal delay={0.2}>
                 <p className="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed mb-10 border-l-2 border-brand-steel pl-6">
-                  Plateforme d'analyse, de triage et de procédures pour les équipes cybersécurité
-                  opérationnelle. Structurez votre défense avec des templates alignés sur les
-                  standards et référentiels fiables.
+                  {copy.heroDescription}
                 </p>
                 <div className="mb-8 flex flex-wrap gap-2">
-                  {['Defensif uniquement', 'Guides actionnables', 'Basee sur standards'].map(
-                    (chip) => (
-                      <span
-                        key={chip}
-                        className="rounded-sm border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-brand-pale"
-                      >
-                        {chip}
-                      </span>
-                    ),
-                  )}
+                  {copy.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-sm border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-brand-pale"
+                    >
+                      {chip}
+                    </span>
+                  ))}
                 </div>
               </Reveal>
               <Reveal delay={0.3}>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link to="/analyses">
+                  <Link to={localizedPath('/analyses')}>
                     <Button
                       as="span"
                       variant="primary"
@@ -497,21 +647,21 @@ const Home: React.FC = () => {
                       icon={BarChart3}
                       className="shadow-[0_0_20px_rgba(47,94,166,0.3)]"
                     >
-                      Consulter les analyses
+                      {copy.analysesCta}
                     </Button>
                   </Link>
-                  <Link to="/templates">
+                  <Link to={localizedPath('/templates')}>
                     <Button as="span" variant="secondary" size="lg" icon={BookOpen}>
-                      Ouvrir les templates
+                      {copy.templatesCta}
                     </Button>
                   </Link>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-4 text-xs font-mono uppercase tracking-wider text-slate-400">
-                  <Link to="/guides" className="hover:text-brand-light transition-colors">
-                    Parcours guides
+                  <Link to={localizedPath('/guides')} className="hover:text-brand-light transition-colors">
+                    {copy.guidesLink}
                   </Link>
-                  <Link to="/outils" className="hover:text-brand-light transition-colors">
-                    Outils de triage
+                  <Link to={localizedPath('/outils')} className="hover:text-brand-light transition-colors">
+                    {copy.toolsLink}
                   </Link>
                 </div>
               </Reveal>
@@ -531,7 +681,7 @@ const Home: React.FC = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-light">
-                              Vulnérabilité du mois
+                              {copy.vulnerabilityOfMonth}
                             </div>
                             <div className="mt-1 text-[11px] font-mono uppercase tracking-wide text-brand-pale">
                               {monthLabel}
@@ -547,15 +697,15 @@ const Home: React.FC = () => {
                             </div>
                             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-brand-pale">
                               <span className="rounded-sm border border-white/15 bg-white/5 px-2 py-1">
-                                Produit: {threatFocus.product}
+                                {copy.productLabel}: {threatFocus.product}
                               </span>
                               <span className="rounded-sm border border-white/15 bg-white/5 px-2 py-1">
-                                Patch: {threatFocus.patchWindow}
+                                {copy.patchLabel}: {threatFocus.patchWindow}
                               </span>
                             </div>
                           </div>
                           <Badge className={severityBadgeClassName}>
-                            {threatFocus.severity.toUpperCase()}
+                            {getSeverityLabel(threatFocus.severity, locale)}
                           </Badge>
                         </div>
                       </div>
@@ -564,7 +714,7 @@ const Home: React.FC = () => {
                         <div className="mb-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-slate-500">
                           <span className="inline-flex items-center gap-1">
                             <Activity size={11} className="text-brand-steel" />
-                            Indice risque du mois
+                            {copy.monthRiskIndex}
                           </span>
                           <span>{threatFocus.cve}</span>
                         </div>
@@ -572,7 +722,7 @@ const Home: React.FC = () => {
                         <div className="grid grid-cols-3 gap-2">
                           <div className="col-span-1 rounded-sm border border-brand-navy/20 bg-brand-pale/30 px-2 py-2 text-center">
                             <p className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
-                              Score
+                              {isEnglish ? 'Score' : 'Score'}
                             </p>
                             <p className="mt-1 text-3xl font-display font-bold text-brand-navy">
                               {riskScore}
@@ -584,27 +734,26 @@ const Home: React.FC = () => {
                             className={`col-span-2 rounded-sm border px-2 py-2 ${riskBand.styleClassName}`}
                           >
                             <p className="text-[10px] font-mono uppercase tracking-wide">
-                              Lecture rapide
+                              {copy.quickRead}
                             </p>
                             <p className="mt-1 text-sm font-bold">{riskBand.label}</p>
                             <p className="text-xs">{riskBand.actionWindow}</p>
                             <p className="mt-2 text-[10px] leading-relaxed">
-                              Plus le score est proche de 100, plus le risque opérationnel est
-                              élevé.
+                              {copy.scoreHint}
                             </p>
                           </div>
                         </div>
 
                         <div className="mt-2 rounded-sm border border-slate-200 bg-slate-50 px-2 py-2">
                           <p className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
-                            Impact financier indicatif (24h-72h)
+                            {copy.financialImpact}
                           </p>
                           <p className="mt-1 text-lg font-display font-bold text-brand-navy">
-                            {formatKiloEuro(financialRange.lower)} - {formatKiloEuro(financialRange.upper)}
+                            {formatKiloEuro(financialRange.lower, locale)} -{' '}
+                            {formatKiloEuro(financialRange.upper, locale)}
                           </p>
                           <p className="text-[10px] leading-relaxed text-slate-500">
-                            Estimation pédagogique pour prioriser. A adapter à votre contexte
-                            métier.
+                            {copy.financialHint}
                           </p>
                         </div>
 
@@ -613,8 +762,8 @@ const Home: React.FC = () => {
                             <li key={driver.label} className="flex items-start gap-2">
                               <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
                               <span>
-                                Facteur {index + 1}: <strong>{driver.label}</strong> ({driver.value}
-                                /100)
+                                {copy.factorLabel} {index + 1}: <strong>{driver.label}</strong> (
+                                {driver.value}/100)
                               </span>
                             </li>
                           ))}
@@ -630,12 +779,12 @@ const Home: React.FC = () => {
                             {threatFocus.cvss}
                           </div>
                           <div className="mt-2">
-                            <Badge color="alert">PATCH PRIORITAIRE</Badge>
+                            <Badge color="alert">{copy.priorityPatchBadge}</Badge>
                           </div>
                         </div>
                         <div className="rounded-sm border border-slate-200 bg-slate-50 p-3">
                           <div className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
-                            Vecteur principal
+                            {copy.mainVector}
                           </div>
                           <div className="mt-1 text-sm font-display font-bold leading-snug text-brand-gold">
                             {threatFocus.attackVector}
@@ -648,23 +797,22 @@ const Home: React.FC = () => {
 
                       <div className="rounded-sm border border-slate-200 bg-white p-3">
                         <div className="text-[10px] font-mono uppercase tracking-wide text-slate-500">
-                          Action operationnelle recommandee
+                          {copy.recommendedAction}
                         </div>
                         <p className="mt-1 text-sm leading-relaxed text-brand-navy">
                           {threatFocus.recommendedAction}
                         </p>
                         <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
-                          Sélection éditoriale mensuelle Cyber Guide pour orienter la priorisation
-                          sécurité.
+                          {copy.editorialNote}
                         </p>
                       </div>
 
                       <div className="rounded-sm border border-slate-200 bg-slate-50 px-3 py-2">
                         <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
-                          <span>CYCLE MENSUEL</span>
+                          <span>{copy.monthlyCycle}</span>
                           <span className="flex items-center gap-2 text-emerald-700">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            VEILLE ACTIVE
+                            {copy.activeMonitoring}
                           </span>
                         </div>
                       </div>
@@ -683,7 +831,7 @@ const Home: React.FC = () => {
           <div className="text-center mb-16">
             <Reveal width="100%">
               <h2 className="text-3xl font-display font-bold text-brand-navy mb-4">
-                Dossiers Stratégiques
+                {copy.strategicFiles}
               </h2>
               <div className="h-1 w-20 bg-brand-steel mx-auto"></div>
             </Reveal>
@@ -692,7 +840,7 @@ const Home: React.FC = () => {
           <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Card 1: Identity */}
             <StaggerItem>
-              <Link to="/analyses/identite-mfa-fatigue" className="group h-full block">
+              <Link to={localizedPath('/analyses/identite-mfa-fatigue')} className="group h-full block">
                 <BlueprintPanel
                   className="h-full hover:border-brand-steel transition-colors duration-300"
                   label="SEC-OPS-01"
@@ -701,14 +849,13 @@ const Home: React.FC = () => {
                     <Lock size={28} strokeWidth={1.5} />
                   </div>
                   <h3 className="text-xl font-display font-bold text-brand-navy mb-3 group-hover:text-brand-steel transition-colors">
-                    Email, MFA & Identité
+                    {copy.card1Title}
                   </h3>
                   <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                    La première ligne de défense. Analyse des contournements MFA et fatigue
-                    attaques.
+                    {copy.card1Body}
                   </p>
                   <div className="mt-auto text-xs font-mono text-brand-steel flex items-center font-bold tracking-wide">
-                    ACCÉDER AU DOSSIER{' '}
+                    {copy.openDossier}{' '}
                     <ArrowRight
                       size={14}
                       className="ml-2 group-hover:translate-x-1 transition-transform"
@@ -720,7 +867,7 @@ const Home: React.FC = () => {
 
             {/* Card 2: Assurance */}
             <StaggerItem>
-              <Link to="/analyses/ad-tiering" className="group h-full block">
+              <Link to={localizedPath('/analyses/ad-tiering')} className="group h-full block">
                 <BlueprintPanel
                   className="h-full hover:border-brand-steel transition-colors duration-300"
                   label="STRAT-02"
@@ -729,14 +876,13 @@ const Home: React.FC = () => {
                     <Network size={28} strokeWidth={1.5} />
                   </div>
                   <h3 className="text-xl font-display font-bold text-brand-navy mb-3 group-hover:text-brand-steel transition-colors">
-                    Active Directory Tiering
+                    {copy.card2Title}
                   </h3>
                   <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                    Segmentation T0/T1/T2 et durcissement des privilèges pour bloquer les mouvements
-                    latéraux.
+                    {copy.card2Body}
                   </p>
                   <div className="mt-auto text-xs font-mono text-brand-steel flex items-center font-bold tracking-wide">
-                    ACCÉDER AU DOSSIER{' '}
+                    {copy.openDossier}{' '}
                     <ArrowRight
                       size={14}
                       className="ml-2 group-hover:translate-x-1 transition-transform"
@@ -748,7 +894,7 @@ const Home: React.FC = () => {
 
             {/* Card 3: NIS2 */}
             <StaggerItem>
-              <Link to="/analyses/ransomware-readiness" className="group h-full block">
+              <Link to={localizedPath('/analyses/ransomware-readiness')} className="group h-full block">
                 <BlueprintPanel
                   className="h-full hover:border-brand-steel transition-colors duration-300"
                   label="COMPLIANCE-03"
@@ -757,14 +903,13 @@ const Home: React.FC = () => {
                     <FileText size={28} strokeWidth={1.5} />
                   </div>
                   <h3 className="text-xl font-display font-bold text-brand-navy mb-3 group-hover:text-brand-steel transition-colors">
-                    Preparation Ransomware
+                    {copy.card3Title}
                   </h3>
                   <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                    Au-dela des sauvegardes: plans de reprise, confinement et reconstruction
-                    operationnelle.
+                    {copy.card3Body}
                   </p>
                   <div className="mt-auto text-xs font-mono text-brand-steel flex items-center font-bold tracking-wide">
-                    ACCÉDER AU DOSSIER{' '}
+                    {copy.openDossier}{' '}
                     <ArrowRight
                       size={14}
                       className="ml-2 group-hover:translate-x-1 transition-transform"
@@ -777,9 +922,9 @@ const Home: React.FC = () => {
 
           <div className="mt-12 text-center">
             <Reveal delay={0.4} width="100%">
-              <Link to="/analyses">
+              <Link to={localizedPath('/analyses')}>
                 <Button as="span" variant="ghost" icon={ArrowRight}>
-                  Voir tous les dossiers
+                  {copy.viewAllDossiers}
                 </Button>
               </Link>
             </Reveal>
@@ -791,17 +936,20 @@ const Home: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 flex flex-col gap-3 text-center">
             <h2 className="text-3xl font-display font-bold text-brand-navy">
-              Guides operationnels
+              {copy.operationalGuides}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-slate-600">
-              Parcours complets pour passer de l analyse a l execution: Active Directory, ransomware
-              et conformite NIS2.
+              {copy.guidesIntro}
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
             {guides.map((guide) => (
-              <Link key={guide.slug} to={`/guides/${guide.slug}`} className="group block">
+              <Link
+                key={guide.slug}
+                to={localizedPath(`/guides/${guide.slug}`)}
+                className="group block"
+              >
                 <div className="h-full rounded-sm border border-slate-200 bg-slate-50 p-5 transition-colors hover:border-brand-steel">
                   <div className="mb-2 text-xs font-mono uppercase tracking-widest text-brand-steel">
                     {guide.category}
@@ -811,7 +959,7 @@ const Home: React.FC = () => {
                   </h3>
                   <p className="mb-4 text-sm text-slate-600">{guide.excerpt}</p>
                   <span className="inline-flex items-center text-xs font-bold uppercase tracking-wide text-brand-steel">
-                    Lire le guide <ArrowRight size={14} className="ml-1" />
+                    {copy.readGuide} <ArrowRight size={14} className="ml-1" />
                   </span>
                 </div>
               </Link>
@@ -819,9 +967,9 @@ const Home: React.FC = () => {
           </div>
 
           <div className="mt-8 text-center">
-            <Link to="/guides">
+            <Link to={localizedPath('/guides')}>
               <Button as="span" variant="ghost" icon={ArrowRight}>
-                Voir tous les guides
+                {copy.viewAllGuides}
               </Button>
             </Link>
           </div>
@@ -832,11 +980,10 @@ const Home: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-display font-bold text-brand-navy">
-              Logiciels de reference
+              {copy.softwareReferences}
             </h2>
             <p className="mx-auto mt-2 max-w-3xl text-sm text-slate-600">
-              Cyber Guide s'appuie sur un ecosysteme d'outils reconnus pour la detection,
-              l'investigation et la remediation.
+              {copy.softwareDescription}
             </p>
           </div>
 
@@ -844,7 +991,7 @@ const Home: React.FC = () => {
             {showcasedSoftwares.map((software) => (
               <Link
                 key={software.id}
-                to="/outils"
+                to={localizedPath('/outils')}
                 className="group rounded-sm border border-slate-200 bg-white p-3 transition-colors hover:border-brand-steel"
               >
                 <div className="mb-2 flex h-10 items-center justify-center rounded-sm border border-slate-100 bg-slate-50 p-1">
@@ -872,9 +1019,9 @@ const Home: React.FC = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <Link to="/outils">
+            <Link to={localizedPath('/outils')}>
               <Button as="span" variant="ghost" size="sm" icon={ArrowRight}>
-                Voir le catalogue logiciel complet
+                {copy.softwareCatalog}
               </Button>
             </Link>
           </div>
@@ -892,7 +1039,7 @@ const Home: React.FC = () => {
                 {threatFocus.cve}
               </div>
               <div className="text-xs font-mono uppercase text-slate-500">
-                Vulnerabilite du mois
+                {copy.monthVulnerabilityStat}
               </div>
             </StaggerItem>
             <StaggerItem className="pl-4">
@@ -906,7 +1053,7 @@ const Home: React.FC = () => {
                 {threatFocus.patchWindow}
               </div>
               <div className="text-xs font-mono uppercase text-slate-500">
-                Fenetre de patch recommandee
+                {copy.patchWindowStat}
               </div>
             </StaggerItem>
             <StaggerItem className="pl-4">
@@ -914,13 +1061,13 @@ const Home: React.FC = () => {
                 {threatFocus.attackVector}
               </div>
               <div className="text-xs font-mono uppercase text-slate-500">
-                Vecteur d attaque prioritaire
+                {copy.attackVectorStat}
               </div>
             </StaggerItem>
           </StaggerContainer>
           <Reveal delay={0.5} width="100%">
             <div className="text-center mt-12 text-xs text-slate-400 italic">
-              Source: CVE/NVD et veille editeur consolidees par Cyber Guide
+              {copy.sourceFootnote}
             </div>
           </Reveal>
         </div>

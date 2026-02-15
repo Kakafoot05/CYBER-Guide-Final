@@ -45,7 +45,7 @@ describe('Contact form validation', () => {
     await user.type(firstNameInput as HTMLInputElement, 'Kamil');
     await user.type(nameInput as HTMLInputElement, 'Kamil');
     await user.type(emailInput as HTMLInputElement, 'kamil@example.com');
-    await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre');
+    await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre demande');
     await user.type(
       messageInput as HTMLTextAreaElement,
       'Message volontairement long pour depasser trente caracteres.',
@@ -76,7 +76,7 @@ describe('Contact form validation', () => {
     await user.type(firstNameInput as HTMLInputElement, 'Kamil');
     await user.type(nameInput as HTMLInputElement, 'Kamil');
     await user.type(emailInput as HTMLInputElement, 'kamil@example.com');
-    await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre');
+    await user.selectOptions(subjectSelect as HTMLSelectElement, 'Autre demande');
     await user.type(messageInput as HTMLTextAreaElement, 'trop court');
 
     now = 4000;

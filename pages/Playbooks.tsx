@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ShieldHeader,
   Button,
@@ -32,6 +32,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 type SortOption = 'severity_desc' | 'title_asc' | 'id_asc';
 
@@ -307,6 +308,9 @@ const downloadMarkdown = (filename: string, content: string): void => {
 
 // /playbooks and /playbooks/:id intentionally share one component for deep-link + list continuity.
 const Playbooks: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { id: routePlaybookIdParam } = useParams<{ id?: string }>();
@@ -474,8 +478,13 @@ const Playbooks: React.FC = () => {
     }
 
     const legacyPlaybook = playbooks.find((item) => item.id.toLowerCase() === legacyPlaybookId);
-    navigate(legacyPlaybook ? `/playbooks/${legacyPlaybook.id}` : '/playbooks', { replace: true });
-  }, [routePlaybookId, legacyPlaybookId, navigate]);
+    navigate(
+      legacyPlaybook
+        ? buildLocalizedPath(`/playbooks/${legacyPlaybook.id}`, locale)
+        : buildLocalizedPath('/playbooks', locale),
+      { replace: true },
+    );
+  }, [routePlaybookId, legacyPlaybookId, navigate, locale]);
 
   useEffect(() => {
     if (!routePlaybookId) {
@@ -483,9 +492,9 @@ const Playbooks: React.FC = () => {
     }
 
     if (!selectedPlaybook) {
-      navigate('/playbooks', { replace: true });
+      navigate(buildLocalizedPath('/playbooks', locale), { replace: true });
     }
-  }, [routePlaybookId, selectedPlaybook, navigate]);
+  }, [routePlaybookId, selectedPlaybook, navigate, locale]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -516,13 +525,13 @@ const Playbooks: React.FC = () => {
   const openPlaybook = (playbook: Playbook) => {
     setIsRunMode(false);
     setGeneratedExport('');
-    navigate(`/playbooks/${playbook.id}`);
+    navigate(localizedPath(`/playbooks/${playbook.id}`));
   };
 
   const closePlaybook = () => {
     setIsRunMode(false);
     setGeneratedExport('');
-    navigate('/playbooks');
+    navigate(localizedPath('/playbooks'));
   };
 
   const persistRunState = (playbookId: string, nextState: RunState) => {
@@ -850,13 +859,13 @@ const Playbooks: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center justify-start gap-4 md:justify-end">
-              <Link to="/guides">
+              <Link to={localizedPath('/guides')}>
                 <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
                   Ouvrir les guides
                 </Button>
               </Link>
               <Link
-                to="/analyses"
+                to={localizedPath('/analyses')}
                 className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
               >
                 Voir aussi les analyses
@@ -1150,7 +1159,7 @@ const Playbooks: React.FC = () => {
                     {relatedAnalyses.map((analysis) => (
                       <Link
                         key={analysis.slug}
-                        to={`/analyses/${analysis.slug}`}
+                        to={localizedPath(`/analyses/${analysis.slug}`)}
                         className="rounded-sm border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand-steel/40 hover:text-brand-navy"
                       >
                         {analysis.title}

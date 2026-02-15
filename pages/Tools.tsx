@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ShieldHeader,
   BlueprintPanel,
@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import type { Tool, Software } from '../types';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 // MAPPING ID -> ICONE CUSTOM
 type LogoComponent = React.ComponentType<{ className?: string; size?: number }>;
@@ -486,6 +487,10 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
 
 // --- PAGE PRINCIPALE ---
 const Tools: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
   const [activeTab, setActiveTab] = useState<'demos' | 'directory'>('demos');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -596,13 +601,13 @@ const Tools: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center justify-start gap-4 md:justify-end">
-            <Link to="/guides">
+            <Link to={localizedPath('/guides')}>
               <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
                 Ouvrir les guides
               </Button>
             </Link>
             <Link
-              to="/templates"
+              to={localizedPath('/templates')}
               className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
             >
               Voir aussi les templates

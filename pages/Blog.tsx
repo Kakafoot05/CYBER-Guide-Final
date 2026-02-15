@@ -1,11 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShieldHeader, BlueprintPanel } from '../components/UI';
 import { blogPosts } from '../data';
 import { ArrowRight } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const Blog: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
@@ -41,7 +46,7 @@ const Blog: React.FC = () => {
               {/* Timeline Node */}
               <div className="absolute -left-[41px] md:-left-[59px] top-6 w-5 h-5 bg-slate-50 border-4 border-brand-steel/50 rounded-full group-hover:border-brand-navy group-hover:scale-110 transition-all"></div>
 
-              <Link to={`/blog/${post.slug}`} className="block">
+              <Link to={localizedPath(`/blog/${post.slug}`)} className="block">
                 <BlueprintPanel
                   className="hover:-translate-y-1 transition-transform duration-300 hover:border-brand-steel"
                   label={`ENTREE JOURNAL: #${idx + 1}`}

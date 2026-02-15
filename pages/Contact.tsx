@@ -1,23 +1,112 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ShieldHeader, BlueprintPanel, Button } from '../components/UI';
 import { Mail, Send, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const FORM_TIMEOUT_MS = 10000;
 
 const Contact: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
+  const copy = isEnglish
+    ? {
+        seoTitle: 'Contact Cyber Guide',
+        seoDescription:
+          'Contact Cyber Guide for questions about analyses, templates, and defensive tooling.',
+        headerSubtitle: 'Communication',
+        sectionTitle: 'Contact us',
+        sectionBody:
+          'For any question about analyses, issue reporting, or access requests for complete tooling.',
+        noteTitle: 'Note:',
+        noteBody:
+          'No commercial prospecting. Non-professional requests will not be processed.',
+        firstName: 'First name *',
+        lastName: 'Last name *',
+        email: 'Email *',
+        subject: 'Subject *',
+        message: 'Message',
+        messagePlaceholder: 'Your detailed message (min. 30 characters)...',
+        subjectPlaceholder: 'Select a subject...',
+        subjectDemo: 'Demo request / Tooling',
+        subjectAnalysis: 'Question about an analysis',
+        subjectBug: 'Issue report',
+        subjectOther: 'Other request',
+        sending: 'Sending',
+        send: 'Send message',
+        sentTitle: 'Message sent',
+        sentBody: 'The Cyber Guide team will reply within 48 business hours.',
+        sendAnother: 'Send another message',
+        openEmail: 'Open email',
+        invalidFirstName: 'First name is required.',
+        invalidLastName: 'Last name is required.',
+        invalidEmail: 'Invalid email address.',
+        invalidMessage: 'Message is too short (min. 30 characters).',
+        spamRejected: 'Submission blocked (detected as spam).',
+        invalidEndpoint: "Invalid Formspree endpoint. Replace '<id>' with your real form ID.",
+        timeoutError: 'Form service timeout. Retry or use direct email.',
+        unavailableError: 'Form service unavailable. Retry or use direct email.',
+        endpointMissing: 'Form is not configured. Add VITE_FORMSPREE_ENDPOINT or use direct email.',
+        genericError: 'An error occurred.',
+      }
+    : {
+        seoTitle: 'Contact Cyber Guide',
+        seoDescription:
+          'Contactez Cyber Guide pour une question sur les analyses, templates ou outils defensifs.',
+        headerSubtitle: 'Communication',
+        sectionTitle: 'Nous contacter',
+        sectionBody:
+          "Pour toute question relative aux analyses, signalement d'erreur ou demande d'accès aux outils complets.",
+        noteTitle: 'Note :',
+        noteBody:
+          'Pas de démarchage commercial. Les demandes non professionnelles ne seront pas traitées.',
+        firstName: 'Prénom *',
+        lastName: 'Nom *',
+        email: 'Email *',
+        subject: 'Sujet *',
+        message: 'Message',
+        messagePlaceholder: 'Votre message détaillé (min. 30 caractères)...',
+        subjectPlaceholder: 'Sélectionner un sujet...',
+        subjectDemo: 'Demande de démo / Outils',
+        subjectAnalysis: 'Question sur une analyse',
+        subjectBug: "Signalement d'erreur",
+        subjectOther: 'Autre demande',
+        sending: 'Envoi en cours',
+        send: 'Envoyer le message',
+        sentTitle: 'Message transmis',
+        sentBody: "L'équipe Cyber Guide vous répondra sous 48h ouvrées.",
+        sendAnother: 'Envoyer un autre message',
+        openEmail: 'Ouvrir email',
+        invalidFirstName: 'Le prénom est requis.',
+        invalidLastName: 'Le nom est requis.',
+        invalidEmail: 'Adresse email invalide.',
+        invalidMessage: 'Le message est trop court (min. 30 caractères).',
+        spamRejected: 'Envoi impossible (détecté comme spam).',
+        invalidEndpoint: "Endpoint Formspree invalide. Remplacez '<id>' par votre ID réel.",
+        timeoutError:
+          "Le service de formulaire ne répond pas (timeout). Réessayez ou utilisez l'email direct.",
+        unavailableError:
+          "Le service de formulaire est indisponible. Réessayez ou utilisez l'email direct.",
+        endpointMissing:
+          "Le formulaire n'est pas configuré. Ajoutez VITE_FORMSPREE_ENDPOINT ou utilisez l'email direct.",
+        genericError: 'Une erreur est survenue.',
+      };
+
   const [formData, setFormData] = useState({
     firstName: '',
     name: '',
     email: '',
     subject: '',
     message: '',
-    honeypot: '', // Anti-spam hidden field
+    honeypot: '',
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Anti-spam time check: reject if submitted too fast (< 3 seconds)
   const mountTime = useRef(Date.now());
 
   const buildMailtoUrl = () => {
@@ -25,48 +114,47 @@ const Contact: React.FC = () => {
     return `mailto:contact@cyber-guide.fr?subject=[CONTACT] ${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(formData.message)}%0A%0ADe: ${encodeURIComponent(fullName)} (${encodeURIComponent(formData.email)})`;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (status === 'error') {
       setStatus('idle');
     }
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
   const validateForm = (): boolean => {
     if (formData.firstName.trim().length < 2) {
-      setErrorMessage('Le prénom est requis.');
+      setErrorMessage(copy.invalidFirstName);
       return false;
     }
     if (formData.name.trim().length < 2) {
-      setErrorMessage('Le nom est requis.');
+      setErrorMessage(copy.invalidLastName);
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      setErrorMessage('Adresse email invalide.');
+      setErrorMessage(copy.invalidEmail);
       return false;
     }
     if (formData.message.trim().length < 30) {
-      setErrorMessage('Le message est trop court (min. 30 caractères).');
+      setErrorMessage(copy.invalidMessage);
       return false;
     }
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setErrorMessage('');
 
-    // 1. Anti-spam Checks
     if (formData.honeypot) {
       return;
     }
+
     if (Date.now() - mountTime.current < 3000) {
-      setErrorMessage('Envoi impossible (détecté comme spam).');
+      setErrorMessage(copy.spamRejected);
       setStatus('error');
       return;
     }
 
-    // 2. Validation
     if (!validateForm()) {
       setStatus('error');
       return;
@@ -74,13 +162,12 @@ const Contact: React.FC = () => {
 
     setStatus('loading');
 
-    // 3. Submission logic
     const endpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT?.trim();
 
     if (endpoint) {
       if (endpoint.includes('<id>')) {
         setStatus('error');
-        setErrorMessage("Endpoint Formspree invalide. Remplacez '<id>' par votre ID réel.");
+        setErrorMessage(copy.invalidEndpoint);
         return;
       }
 
@@ -133,47 +220,49 @@ const Contact: React.FC = () => {
             }
           }
         } catch {
-          // Ignore body parsing issue and keep status fallback.
+          // Ignore response parsing issues and fallback to status text.
         }
 
-        throw new Error(formspreeError || `Erreur formulaire (${response.status})`);
+        throw new Error(formspreeError || `Form error (${response.status})`);
       } catch (error) {
         const timeoutError = error instanceof DOMException && error.name === 'AbortError';
         setStatus('error');
         setErrorMessage(
           timeoutError
-            ? "Le service de formulaire ne répond pas (timeout). Réessayez ou utilisez l'email direct."
+            ? copy.timeoutError
             : error instanceof Error && error.message
-              ? `Envoi impossible: ${error.message}`
-              : "Le service de formulaire est indisponible. Réessayez ou utilisez l'email direct.",
+              ? `${copy.unavailableError} (${error.message})`
+              : copy.unavailableError,
         );
       } finally {
         window.clearTimeout(timeoutId);
       }
     } else {
       setStatus('error');
-      setErrorMessage(
-        "Le formulaire n'est pas configuré. Ajoutez VITE_FORMSPREE_ENDPOINT ou utilisez l'email direct.",
-      );
+      setErrorMessage(copy.endpointMissing);
     }
   };
 
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
-        title="Contact Cyber Guide"
-        description="Contactez Cyber Guide pour une question sur les analyses, templates ou outils defensifs."
-        path="/contact"
+        title={copy.seoTitle}
+        description={copy.seoDescription}
+        path={localizedPath('/contact')}
         image="/assets/og/contact.svg"
-        keywords={['contact cyber', 'cybersecurite operationnelle', 'support cyber guide']}
+        keywords={
+          isEnglish
+            ? ['cyber contact', 'operational cybersecurity', 'cyber guide support']
+            : ['contact cyber', 'cybersecurite operationnelle', 'support cyber guide']
+        }
         schema={{
           '@context': 'https://schema.org',
           '@type': 'ContactPage',
-          name: 'Contact Cyber Guide',
-          url: 'https://cyber-guide.fr/contact',
+          name: copy.seoTitle,
+          url: `https://cyber-guide.fr${localizedPath('/contact')}`,
         }}
       />
-      <ShieldHeader title="Contact" subtitle="Communication" align="center" />
+      <ShieldHeader title="Contact" subtitle={copy.headerSubtitle} align="center" />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <BlueprintPanel label="SECURE_CHANNEL_FORM" className="py-12">
@@ -182,28 +271,21 @@ const Contact: React.FC = () => {
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle size={32} />
               </div>
-              <h2 className="text-2xl font-display font-bold text-brand-navy mb-2">
-                Message Transmis
-              </h2>
-              <p className="text-slate-600">L'équipe Cyber Guide vous répondra sous 48h ouvrées.</p>
+              <h2 className="text-2xl font-display font-bold text-brand-navy mb-2">{copy.sentTitle}</h2>
+              <p className="text-slate-600">{copy.sentBody}</p>
               <button
+                type="button"
                 onClick={() => setStatus('idle')}
                 className="mt-8 text-sm font-bold text-brand-steel underline"
               >
-                Envoyer un autre message
+                {copy.sendAnother}
               </button>
             </div>
           ) : (
             <div className="grid md:grid-cols-12 gap-12">
-              {/* Info Column */}
               <div className="md:col-span-5 border-b md:border-b-0 md:border-r border-slate-200 pb-8 md:pb-0 md:pr-8">
-                <h2 className="text-xl font-display font-bold text-brand-navy mb-4">
-                  Nous contacter
-                </h2>
-                <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                  Pour toute question relative aux analyses, signalement d'erreur ou demande d'accès
-                  aux outils complets.
-                </p>
+                <h2 className="text-xl font-display font-bold text-brand-navy mb-4">{copy.sectionTitle}</h2>
+                <p className="text-slate-600 text-sm mb-6 leading-relaxed">{copy.sectionBody}</p>
 
                 <div className="flex items-center gap-3 text-sm font-mono text-brand-navy mb-2">
                   <Mail size={16} className="text-brand-steel" />
@@ -211,15 +293,12 @@ const Contact: React.FC = () => {
                 </div>
 
                 <div className="mt-8 p-4 bg-slate-100 border-l-4 border-brand-steel text-xs text-slate-500">
-                  <strong>Note :</strong> Pas de démarchage commercial. Les demandes non
-                  professionnelles ne seront pas traitées.
+                  <strong>{copy.noteTitle}</strong> {copy.noteBody}
                 </div>
               </div>
 
-              {/* Form Column */}
               <div className="md:col-span-7">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Honeypot Field (Hidden) */}
                   <div className="hidden">
                     <input
                       type="text"
@@ -234,7 +313,7 @@ const Contact: React.FC = () => {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Prénom *
+                        {copy.firstName}
                       </label>
                       <input
                         type="text"
@@ -248,7 +327,7 @@ const Contact: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Nom *
+                        {copy.lastName}
                       </label>
                       <input
                         type="text"
@@ -265,7 +344,7 @@ const Contact: React.FC = () => {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Email *
+                        {copy.email}
                       </label>
                       <input
                         type="email"
@@ -280,36 +359,36 @@ const Contact: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                        Sujet *
+                        {copy.subject}
                       </label>
                       <select
                         name="subject"
                         className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel outline-none text-sm bg-white"
                         value={formData.subject}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, subject: e.target.value }))
+                        onChange={(event) =>
+                          setFormData((prev) => ({ ...prev, subject: event.target.value }))
                         }
                         required
                       >
-                        <option value="">Sélectionner un sujet...</option>
-                        <option value="Demande de démo">Demande de démo / Outils</option>
-                        <option value="Question Analyse">Question sur une analyse</option>
-                        <option value="Erreur / Bug">Signalement d'erreur</option>
-                        <option value="Autre">Autre demande</option>
+                        <option value="">{copy.subjectPlaceholder}</option>
+                        <option value={copy.subjectDemo}>{copy.subjectDemo}</option>
+                        <option value={copy.subjectAnalysis}>{copy.subjectAnalysis}</option>
+                        <option value={copy.subjectBug}>{copy.subjectBug}</option>
+                        <option value={copy.subjectOther}>{copy.subjectOther}</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
-                      Message
+                      {copy.message}
                     </label>
                     <textarea
                       name="message"
                       required
                       rows={5}
                       className="w-full px-3 py-2 border border-slate-300 rounded-sm focus:border-brand-steel focus:ring-1 focus:ring-brand-steel outline-none text-sm resize-none"
-                      placeholder="Votre message détaillé (min. 30 caractères)..."
+                      placeholder={copy.messagePlaceholder}
                       value={formData.message}
                       onChange={handleChange}
                     ></textarea>
@@ -322,13 +401,13 @@ const Contact: React.FC = () => {
                       className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 rounded-sm"
                     >
                       <AlertTriangle size={14} />
-                      <span>{errorMessage || 'Une erreur est survenue.'}</span>
+                      <span>{errorMessage || copy.genericError}</span>
                       <button
                         type="button"
                         className="ml-auto font-bold underline"
                         onClick={() => window.location.assign(buildMailtoUrl())}
                       >
-                        Ouvrir email
+                        {copy.openEmail}
                       </button>
                     </div>
                   )}
@@ -341,11 +420,11 @@ const Contact: React.FC = () => {
                   >
                     {status === 'loading' ? (
                       <>
-                        Envoi en cours <Loader2 size={16} className="ml-2 animate-spin" />
+                        {copy.sending} <Loader2 size={16} className="ml-2 animate-spin" />
                       </>
                     ) : (
                       <>
-                        Envoyer le message <Send size={16} className="ml-2" />
+                        {copy.send} <Send size={16} className="ml-2" />
                       </>
                     )}
                   </Button>

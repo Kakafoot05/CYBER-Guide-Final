@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useLocation } from 'react-router-dom';
 import { Badge, TechSeparator, Button, type BadgeColor } from '../components/UI';
 import { analyses, playbooks } from '../data';
 import {
@@ -12,13 +12,17 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const AnalysisDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const analysis = analyses.find((a) => a.slug === slug);
 
   if (!analysis) {
-    return <Navigate to="/analyses" replace />;
+    return <Navigate to={localizedPath('/analyses')} replace />;
   }
 
   const linkedPlaybooks = playbooks.filter((playbook) =>
@@ -97,7 +101,7 @@ const AnalysisDetail: React.FC = () => {
       <div className="bg-brand-navy text-white pt-24 pb-12 border-b border-brand-steel/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
-            to="/analyses"
+            to={localizedPath('/analyses')}
             className="inline-flex items-center text-brand-light/70 hover:text-white text-xs font-mono uppercase tracking-widest mb-6 transition-colors"
           >
             <ArrowLeft size={14} className="mr-2" /> Retour à la bibliothèque
@@ -372,7 +376,7 @@ const AnalysisDetail: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/contact">
+              <Link to={localizedPath('/contact')}>
                 <Button as="span" variant="tech" className="w-full justify-center">
                   Contacter l'équipe
                 </Button>
@@ -403,7 +407,7 @@ const AnalysisDetail: React.FC = () => {
                   {linkedPlaybooks.map((playbook) => (
                     <Link
                       key={playbook.id}
-                      to={`/playbooks/${playbook.id}`}
+                      to={localizedPath(`/playbooks/${playbook.id}`)}
                       className="block rounded-sm border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 hover:border-brand-steel/40 hover:text-brand-navy transition-colors"
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -432,7 +436,7 @@ const AnalysisDetail: React.FC = () => {
                 Suivez le parcours long format pour structurer un plan defensif complet.
               </p>
               <Link
-                to={`/guides/${relatedGuideSlug}`}
+                to={localizedPath(`/guides/${relatedGuideSlug}`)}
                 className="inline-flex items-center text-xs font-bold uppercase tracking-wide text-brand-steel hover:text-brand-navy"
               >
                 Ouvrir le guide <ArrowRight size={14} className="ml-1" />

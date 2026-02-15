@@ -1,6 +1,20 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter, HashRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter,
+  HashRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { Layout } from './components/Layout';
+import {
+  buildLocalizedPath,
+  getLocaleFromPathname,
+  getPathWithQueryHash,
+  getStoredLocale,
+  setStoredLocale,
+} from './utils/locale';
 
 const Home = React.lazy(() => import('./pages/Home'));
 const Analyses = React.lazy(() => import('./pages/Analyses'));
@@ -27,6 +41,37 @@ const ScrollToTop = () => {
   return null;
 };
 
+const LocaleSync: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeLocale = getLocaleFromPathname(location.pathname);
+
+  React.useEffect(() => {
+    if (activeLocale === 'en') {
+      setStoredLocale('en');
+    }
+  }, [activeLocale]);
+
+  React.useEffect(() => {
+    if (activeLocale === 'en') {
+      return;
+    }
+
+    const preferredLocale = getStoredLocale();
+    if (preferredLocale !== 'en') {
+      return;
+    }
+
+    const currentPath = getPathWithQueryHash(location);
+    const localizedPath = buildLocalizedPath(currentPath, 'en');
+    if (localizedPath !== currentPath) {
+      navigate(localizedPath, { replace: true });
+    }
+  }, [activeLocale, location, navigate]);
+
+  return null;
+};
+
 const RouteLoading: React.FC = () => (
   <div className="flex min-h-[50vh] items-center justify-center">
     <div className="rounded-sm border border-slate-200 bg-white px-4 py-2 text-xs font-mono uppercase tracking-wider text-slate-500">
@@ -47,28 +92,52 @@ const AppRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
+  const routeDefinitions: Array<{ path: string; element: React.ReactElement }> = [
+    { path: '/', element: <Home /> },
+    { path: '/analyses', element: <Analyses /> },
+    { path: '/analyses/:slug', element: <AnalysisDetail /> },
+    { path: '/projets', element: <Projects /> },
+    { path: '/guides', element: <Guides /> },
+    { path: '/guides/:slug', element: <GuideDetail /> },
+    { path: '/outils', element: <Tools /> },
+    { path: '/templates', element: <Templates /> },
+    { path: '/templates/:id', element: <Templates /> },
+    { path: '/playbooks', element: <Playbooks /> },
+    { path: '/playbooks/:id', element: <Playbooks /> },
+    { path: '/a-propos', element: <About /> },
+    { path: '/sources', element: <Sources /> },
+    { path: '/contact', element: <Contact /> },
+    { path: '/blog', element: <Blog /> },
+    { path: '/blog/:slug', element: <BlogDetail /> },
+  ];
+
+  const renderLocalizedRoutes = (localePrefix: '' | '/en') =>
+    routeDefinitions.map((routeDefinition) => {
+      const localizedPath =
+        localePrefix === ''
+          ? routeDefinition.path
+          : routeDefinition.path === '/'
+            ? '/en'
+            : `/en${routeDefinition.path}`;
+
+      return (
+        <Route
+          key={`${localePrefix || 'fr'}-${routeDefinition.path}`}
+          path={localizedPath}
+          element={routeDefinition.element}
+        />
+      );
+    });
+
   return (
     <AppRouter>
+      <LocaleSync />
       <ScrollToTop />
       <Layout>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/analyses" element={<Analyses />} />
-            <Route path="/analyses/:slug" element={<AnalysisDetail />} />
-            <Route path="/projets" element={<Projects />} />
-            <Route path="/guides" element={<Guides />} />
-            <Route path="/guides/:slug" element={<GuideDetail />} />
-            <Route path="/outils" element={<Tools />} />
-            <Route path="/templates" element={<Templates />} />
-            <Route path="/templates/:id" element={<Templates />} />
-            <Route path="/playbooks" element={<Playbooks />} />
-            <Route path="/playbooks/:id" element={<Playbooks />} />
-            <Route path="/a-propos" element={<About />} />
-            <Route path="/sources" element={<Sources />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogDetail />} />
+            {renderLocalizedRoutes('')}
+            {renderLocalizedRoutes('/en')}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

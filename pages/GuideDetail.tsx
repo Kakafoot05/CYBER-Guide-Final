@@ -1,17 +1,21 @@
 import React from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, HelpCircle, Link2 } from 'lucide-react';
 import { Button, ShieldHeader, TechSeparator } from '../components/UI';
 import { Seo } from '../components/Seo';
 import { analyses, playbooks } from '../data';
 import { getGuideBySlug } from '../guides';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const GuideDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const guide = getGuideBySlug(slug ?? '');
 
   if (!guide) {
-    return <Navigate to="/guides" replace />;
+    return <Navigate to={localizedPath('/guides')} replace />;
   }
 
   const relatedAnalyses = analyses.filter((analysis) =>
@@ -94,7 +98,7 @@ const GuideDetail: React.FC = () => {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Link
-          to="/guides"
+          to={localizedPath('/guides')}
           className="mb-8 inline-flex items-center text-xs font-mono uppercase tracking-widest text-slate-500 transition-colors hover:text-brand-steel"
         >
           <ArrowLeft size={13} className="mr-2" /> Retour aux guides
@@ -174,12 +178,12 @@ const GuideDetail: React.FC = () => {
                 concret.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Link to="/analyses">
+                <Link to={localizedPath('/analyses')}>
                   <Button as="span" variant="primary" size="sm" icon={ArrowRight}>
                     Ouvrir les analyses
                   </Button>
                 </Link>
-                <Link to="/playbooks">
+                <Link to={localizedPath('/playbooks')}>
                   <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
                     Ouvrir les playbooks
                   </Button>
@@ -217,7 +221,7 @@ const GuideDetail: React.FC = () => {
                   {relatedAnalyses.map((analysis) => (
                     <Link
                       key={analysis.slug}
-                      to={`/analyses/${analysis.slug}`}
+                      to={localizedPath(`/analyses/${analysis.slug}`)}
                       className="block rounded-sm border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand-steel/40 hover:text-brand-navy"
                     >
                       {analysis.title}
@@ -235,7 +239,7 @@ const GuideDetail: React.FC = () => {
                   {relatedPlaybooks.map((playbook) => (
                     <Link
                       key={playbook.id}
-                      to={`/playbooks/${playbook.id}`}
+                      to={localizedPath(`/playbooks/${playbook.id}`)}
                       className="block rounded-sm border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand-steel/40 hover:text-brand-navy"
                     >
                       {playbook.title}
@@ -253,7 +257,7 @@ const GuideDetail: React.FC = () => {
                   {guide.relatedLinks.map((item) => (
                     <Link
                       key={item.path}
-                      to={item.path}
+                      to={localizedPath(item.path)}
                       className="block rounded-sm border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand-steel/40 hover:text-brand-navy"
                     >
                       {item.label}

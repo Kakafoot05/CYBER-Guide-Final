@@ -30,6 +30,17 @@ describe('App routing', () => {
     expect(await screen.findByText(/Dossiers d'Analyse/i)).toBeTruthy();
   });
 
+  it('renders analyses page when route points to english analyses route', async () => {
+    window.history.replaceState({}, '', '/en/analyses');
+    render(
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>,
+    );
+
+    expect(await screen.findByText(/Analysis Dossiers/i)).toBeTruthy();
+  });
+
   it('renders guides page when route points to guides', async () => {
     window.history.replaceState({}, '', '/guides');
     render(

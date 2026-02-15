@@ -1,10 +1,15 @@
 ﻿import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShieldHeader, TechSeparator, Badge, Button } from '../components/UI';
 import { ExternalLink, Calendar, BookOpen, ShieldCheck, Rss, ArrowUpRight } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const Sources: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
   const sources = [
     {
       id: 'anssi',
@@ -157,13 +162,13 @@ const Sources: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center justify-start gap-4 md:justify-end">
-            <Link to="/guides">
+            <Link to={localizedPath('/guides')}>
               <Button as="span" variant="secondary" size="sm" icon={ArrowUpRight}>
                 Ouvrir les guides
               </Button>
             </Link>
             <Link
-              to="/analyses"
+              to={localizedPath('/analyses')}
               className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
             >
               Voir aussi les analyses

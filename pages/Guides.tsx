@@ -1,11 +1,16 @@
 ﻿import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, BookMarked, Clock4, LibraryBig } from 'lucide-react';
 import { BlueprintPanel, ShieldHeader, Badge } from '../components/UI';
 import { Seo } from '../components/Seo';
 import { guides } from '../guides';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const Guides: React.FC = () => {
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       <Seo
@@ -57,7 +62,7 @@ const Guides: React.FC = () => {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {guides.map((guide) => (
-            <Link key={guide.slug} to={`/guides/${guide.slug}`} className="group">
+            <Link key={guide.slug} to={localizedPath(`/guides/${guide.slug}`)} className="group">
               <BlueprintPanel className="h-full border-slate-200 transition-colors hover:border-brand-steel">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <Badge color="steel">{guide.category}</Badge>

@@ -26,6 +26,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import { buildLocalizedPath, getLocaleFromPathname, stripLocalePrefix } from '../utils/locale';
 
 type SortOption = 'priority_desc' | 'title_asc' | 'updated_desc';
 type TemplateValues = Record<string, string>;
@@ -55,11 +56,6 @@ const ESSENTIAL_TEMPLATE_IDS = [
   'tpl-013',
   'tpl-019',
 ] as const;
-const COLLECTION_MODE_LABELS: Record<CollectionMode, string> = {
-  essentials: 'Premium',
-  all: 'Tous',
-};
-
 const PRIORITY_ORDER: Record<TemplatePriority, number> = {
   Critique: 4,
   Élevée: 3,
@@ -67,11 +63,7 @@ const PRIORITY_ORDER: Record<TemplatePriority, number> = {
   Faible: 1,
 };
 
-const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
-  { value: 'priority_desc', label: 'Priorité décroissante' },
-  { value: 'title_asc', label: 'Titre A→Z' },
-  { value: 'updated_desc', label: 'Mis à jour (récent)' },
-];
+const SORT_OPTION_VALUES: SortOption[] = ['priority_desc', 'title_asc', 'updated_desc'];
 
 const normalizeText = (value: string): string =>
   value
@@ -95,24 +87,24 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const formatDate = (isoDate: string): string => {
+const formatDate = (isoDate: string, locale: 'fr' | 'en'): string => {
   const parsed = new Date(isoDate);
   if (Number.isNaN(parsed.getTime())) {
     return '—';
   }
 
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'fr-FR', {
     dateStyle: 'long',
   }).format(parsed);
 };
 
-const formatDateTime = (isoDate: string): string => {
+const formatDateTime = (isoDate: string, locale: 'fr' | 'en'): string => {
   const parsed = new Date(isoDate);
   if (Number.isNaN(parsed.getTime())) {
     return '—';
   }
 
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'fr-FR', {
     dateStyle: 'long',
     timeStyle: 'short',
   }).format(parsed);
@@ -280,9 +272,152 @@ const getInputMode = (
 const Templates: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const normalizedPath = stripLocalePrefix(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const localizedAbsolutePath = (path: string): string =>
+    `https://cyber-guide.fr${buildLocalizedPath(path, locale)}`;
   const { id: routeTemplateIdParam } = useParams<{ id?: string }>();
 
   const routeTemplateId = routeTemplateIdParam?.toLowerCase() ?? null;
+  const copy = isEnglish
+    ? {
+        all: 'All',
+        title: 'Templates',
+        subtitle: 'Enterprise Ops',
+        metaCustom: 'Customizable',
+        searchPlaceholder: 'Search (content, tags, audience...)',
+        priorityAll: 'Priority: All',
+        audiencePrefix: 'Audience',
+        sortPrefix: 'Sort',
+        collectionPremium: 'Premium collection',
+        collectionAll: 'All',
+        withCompliance: 'With GDPR/NIS2',
+        templateCountLabel: 'templates',
+        noTemplate: 'No template matches current filters.',
+        updatedShort: 'Updated',
+        openTemplate: 'Open',
+        openTemplateAria: 'Open template',
+        drawerTitleSuffix: 'Enterprise template',
+        drawerBack: 'Back to library',
+        variables: 'Variables',
+        prefill: 'Prefill examples',
+        reset: 'Reset',
+        preview: 'Rendered preview',
+        previewVisual: 'Visual preview',
+        previewDocument: 'Professional report',
+        missingVariables: 'Missing variables',
+        fillLabel: 'Complete:',
+        renderedTitle: 'Rendered title',
+        printReady: 'Print ready ✅',
+        printFailed: 'Cannot prepare print',
+        printOpenFailed: 'Cannot open print preview',
+        generatedAt: 'Generated on',
+        priority: 'Priority',
+        updatedOn: 'Updated',
+        sections: 'Sections',
+        required: 'Required',
+        references: 'References',
+        frameworkReferences: 'Framework references',
+        frameworkFallback: 'Add relevant standards here (NIST, ISO, ANSSI, CIS).',
+        limitsValidation: 'Limits and validation',
+        limitsFallback:
+          'This template must be validated by the relevant business functions before distribution.',
+        approvalBlock: 'Internal approval block',
+        approvalNote: 'Complete this block before internal publication or external sending.',
+        draftedBy: 'Drafted by (SOC / IR)',
+        validatedBy: 'Validated by (CISO / Legal)',
+        managementApproval: 'Management approval',
+        signatureMeta: 'Name, title, date',
+        signatureApproval: 'Signature and classification',
+        targetAudience: 'Target audience',
+        reportDate: 'Generated',
+        printReport: 'Print report',
+        copyRendered: 'Copy rendered',
+        downloadMd: 'Download .md',
+        copyRaw: 'Copy raw',
+        copied: 'Copied ✅',
+        copiedRendered: 'Rendered copied ✅',
+        copiedRaw: 'Raw copied ✅',
+        copyFailed: 'Copy failed',
+        downloadSuccess: 'Downloaded .md ✅',
+        previewEmptySection: 'Complete this section for your context.',
+        seoCollectionTitle: 'Enterprise cybersecurity templates',
+        seoCollectionDescription:
+          'Library of enterprise-oriented cybersecurity templates, customizable and exportable as Markdown.',
+        sortPriority: 'Priority descending',
+        sortTitle: 'Title A→Z',
+        sortUpdated: 'Updated (recent first)',
+      }
+    : {
+        all: 'Tous',
+        title: 'Templates',
+        subtitle: 'Ops Entreprise',
+        metaCustom: 'Personnalisables',
+        searchPlaceholder: 'Rechercher (contenu, tags, audience...)',
+        priorityAll: 'Priorité: Toutes',
+        audiencePrefix: 'Audience',
+        sortPrefix: 'Tri',
+        collectionPremium: 'Collection Premium',
+        collectionAll: 'Tous',
+        withCompliance: 'Avec GDPR/NIS2',
+        templateCountLabel: 'templates',
+        noTemplate: 'Aucun template ne correspond aux filtres actuels.',
+        updatedShort: 'MAJ',
+        openTemplate: 'Ouvrir',
+        openTemplateAria: 'Ouvrir le template',
+        drawerTitleSuffix: 'Template entreprise',
+        drawerBack: 'Retour bibliothèque',
+        variables: 'Variables',
+        prefill: 'Préremplir exemples',
+        reset: 'Reset',
+        preview: 'Preview rendu',
+        previewVisual: 'Aperçu visuel',
+        previewDocument: 'Rapport Pro',
+        missingVariables: 'Variables manquantes',
+        fillLabel: 'Compléter:',
+        renderedTitle: 'Titre rendu',
+        printReady: 'Impression prête ✅',
+        printFailed: 'Impossible de préparer l impression',
+        printOpenFailed: 'Impossible d ouvrir l aperçu impression',
+        generatedAt: 'Généré le',
+        priority: 'Priorité',
+        updatedOn: 'Mise à jour',
+        sections: 'Rubriques',
+        required: 'Obligatoires',
+        references: 'Références',
+        frameworkReferences: 'Références de cadrage',
+        frameworkFallback: 'Ajouter ici les standards applicables (NIST, ISO, ANSSI, CIS).',
+        limitsValidation: 'Limites et validation',
+        limitsFallback:
+          'Ce template doit être validé par les fonctions concernées avant diffusion.',
+        approvalBlock: 'Bloc approbation interne',
+        approvalNote: 'Compléter ce bloc avant publication interne ou envoi externe.',
+        draftedBy: 'Rédigé par (SOC / IR)',
+        validatedBy: 'Validé par (RSSI / Juridique)',
+        managementApproval: 'Approbation Direction',
+        signatureMeta: 'Nom, fonction, date',
+        signatureApproval: 'Signature et classification',
+        targetAudience: 'Audience cible',
+        reportDate: 'Généré',
+        printReport: 'Imprimer rapport',
+        copyRendered: 'Copier rendu',
+        downloadMd: 'Télécharger .md',
+        copyRaw: 'Copier brut',
+        copied: 'Copié ✅',
+        copiedRendered: 'Copié rendu ✅',
+        copiedRaw: 'Copié brut ✅',
+        copyFailed: 'Copie impossible',
+        downloadSuccess: 'Fichier .md téléchargé ✅',
+        previewEmptySection: 'Compléter cette rubrique selon votre contexte.',
+        seoCollectionTitle: 'Templates cybersécurité entreprise',
+        seoCollectionDescription:
+          'Bibliothèque de templates cybersécurité orientés entreprise, personnalisables et exportables en Markdown.',
+        sortPriority: 'Priorité décroissante',
+        sortTitle: 'Titre A→Z',
+        sortUpdated: 'Mis à jour (récent)',
+      };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tous');
@@ -305,25 +440,25 @@ const Templates: React.FC = () => {
       : null;
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/playbooks')) {
+    if (!normalizedPath.startsWith('/playbooks')) {
       return;
     }
 
     if (routeTemplateId) {
-      navigate(`/templates/${routeTemplateId}`, { replace: true });
+      navigate(localizedPath(`/templates/${routeTemplateId}`), { replace: true });
       return;
     }
 
-    navigate('/templates', { replace: true });
-  }, [location.pathname, routeTemplateId, navigate]);
+    navigate(localizedPath('/templates'), { replace: true });
+  }, [normalizedPath, routeTemplateId, navigate, localizedPath]);
 
   useEffect(() => {
     if (!routeTemplateId || selectedTemplate) {
       return;
     }
 
-    navigate('/templates', { replace: true });
-  }, [routeTemplateId, selectedTemplate, navigate]);
+    navigate(localizedPath('/templates'), { replace: true });
+  }, [routeTemplateId, selectedTemplate, navigate, localizedPath]);
 
   useEffect(() => {
     return () => {
@@ -464,11 +599,14 @@ const Templates: React.FC = () => {
 
     return visualPreview.sections.slice(0, 3).map((section) => ({
       title: section.title,
-      value: summarizeSection(section.lines) || 'Compléter cette rubrique selon votre contexte.',
+      value: summarizeSection(section.lines) || copy.previewEmptySection,
     }));
-  }, [selectedTemplate, visualPreview]);
+  }, [selectedTemplate, visualPreview, copy.previewEmptySection]);
 
-  const reportGeneratedAt = useMemo(() => formatDateTime(new Date().toISOString()), []);
+  const reportGeneratedAt = useMemo(
+    () => formatDateTime(new Date().toISOString(), locale),
+    [locale],
+  );
   const reportLogoUrl = useMemo(() => `${window.location.origin}/assets/FaviconFinal.png`, []);
 
   const showToast = (message: string) => {
@@ -484,12 +622,12 @@ const Templates: React.FC = () => {
     }, 1500);
   };
 
-  const copyToClipboard = async (value: string, successMessage = 'Copié ✅') => {
+  const copyToClipboard = async (value: string, successMessage = copy.copied) => {
     try {
       await navigator.clipboard.writeText(value);
       showToast(successMessage);
     } catch {
-      showToast('Copie impossible');
+      showToast(copy.copyFailed);
     }
   };
 
@@ -536,11 +674,11 @@ const Templates: React.FC = () => {
 
   const openTemplate = (template: CyberTemplate) => {
     setPreviewMode('document');
-    navigate(`/templates/${template.id}`);
+    navigate(localizedPath(`/templates/${template.id}`));
   };
 
   const closeTemplate = () => {
-    navigate('/templates');
+    navigate(localizedPath('/templates'));
   };
 
   const downloadRenderedTemplate = () => {
@@ -550,7 +688,7 @@ const Templates: React.FC = () => {
 
     const filename = `${selectedTemplate.id}-${slugify(selectedTemplate.title)}.md`;
     downloadMarkdown(filename, renderedPreview);
-    showToast('Fichier .md téléchargé ✅');
+    showToast(copy.downloadSuccess);
   };
 
   const printDocumentPreview = () => {
@@ -574,7 +712,7 @@ const Templates: React.FC = () => {
     const frameDocument = frameWindow?.document;
     if (!frameWindow || !frameDocument) {
       printFrame.remove();
-      showToast('Impossible d ouvrir l aperçu impression');
+      showToast(copy.printOpenFailed);
       return;
     }
 
@@ -589,7 +727,7 @@ const Templates: React.FC = () => {
     try {
       frameDocument.open();
       frameDocument.write(`<!doctype html>
-<html lang="fr">
+<html lang="${isEnglish ? 'en' : 'fr'}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1101,10 +1239,10 @@ const Templates: React.FC = () => {
       });
       window.setTimeout(triggerPrint, 220);
       window.setTimeout(cleanupFrame, 15000);
-      showToast('Impression prête ✅');
+      showToast(copy.printReady);
     } catch {
       cleanupFrame();
-      showToast('Impossible de préparer l impression');
+      showToast(copy.printFailed);
     }
   };
 
@@ -1116,13 +1254,13 @@ const Templates: React.FC = () => {
         description: selectedTemplate.description,
         dateModified: selectedTemplate.updatedAt,
         keywords: selectedTemplate.tags.join(', '),
-        url: `https://cyber-guide.fr/templates/${selectedTemplate.id}`,
+        url: localizedAbsolutePath(`/templates/${selectedTemplate.id}`),
       }
     : {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        name: 'Templates cybersécurité entreprise',
-        url: 'https://cyber-guide.fr/templates',
+        name: copy.seoCollectionTitle,
+        url: localizedAbsolutePath('/templates'),
       };
 
   return (
@@ -1131,27 +1269,27 @@ const Templates: React.FC = () => {
         title={
           selectedTemplate
             ? `${selectedTemplate.title} (Template)`
-            : 'Templates cybersécurité entreprise'
+            : copy.seoCollectionTitle
         }
         description={
-          selectedTemplate
-            ? selectedTemplate.description
-            : 'Bibliothèque de templates cybersécurité orientés entreprise, personnalisables et exportables en Markdown.'
+          selectedTemplate ? selectedTemplate.description : copy.seoCollectionDescription
         }
-        path={selectedTemplate ? `/templates/${selectedTemplate.id}` : '/templates'}
+        path={selectedTemplate ? localizedPath(`/templates/${selectedTemplate.id}`) : localizedPath('/templates')}
         image="/assets/og/playbooks.svg"
         keywords={
           selectedTemplate
             ? [...selectedTemplate.tags, selectedTemplate.category, selectedTemplate.priority]
-            : ['templates cybersécurité', 'incident response', 'policy', 'grc', 'vendor security']
+            : isEnglish
+              ? ['cybersecurity templates', 'incident response', 'policy', 'grc', 'vendor security']
+              : ['templates cybersécurité', 'incident response', 'policy', 'grc', 'vendor security']
         }
         schema={templateSeoSchema}
       />
 
       <ShieldHeader
-        title="Templates"
-        subtitle="Ops Entreprise"
-        meta={['Personnalisables', 'Offline', 'Export .md']}
+        title={copy.title}
+        subtitle={copy.subtitle}
+        meta={[copy.metaCustom, 'Offline', 'Export .md']}
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1166,7 +1304,7 @@ const Templates: React.FC = () => {
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Rechercher (contenu, tags, audience...)"
+                placeholder={copy.searchPlaceholder}
                 className="w-full rounded-sm border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition-colors focus:border-brand-steel focus:bg-white"
               />
             </label>
@@ -1183,7 +1321,7 @@ const Templates: React.FC = () => {
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>
-                    {category}
+                    {category === 'Tous' ? copy.all : category}
                   </option>
                 ))}
               </select>
@@ -1194,7 +1332,7 @@ const Templates: React.FC = () => {
               onChange={(event) => setActivePriority(event.target.value)}
               className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-brand-steel focus:bg-white"
             >
-              <option value="Tous">Priorité: Toutes</option>
+              <option value="Tous">{copy.priorityAll}</option>
               <option value="Critique">Critique</option>
               <option value="Élevée">Élevée</option>
               <option value="Moyenne">Moyenne</option>
@@ -1208,7 +1346,7 @@ const Templates: React.FC = () => {
             >
               {audiences.map((audience) => (
                 <option key={audience} value={audience}>
-                  Audience: {audience}
+                  {copy.audiencePrefix}: {audience === 'Tous' ? copy.all : audience}
                 </option>
               ))}
             </select>
@@ -1218,9 +1356,14 @@ const Templates: React.FC = () => {
               onChange={(event) => setSortOption(event.target.value as SortOption)}
               className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-brand-steel focus:bg-white"
             >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  Tri: {option.label}
+              {SORT_OPTION_VALUES.map((optionValue) => (
+                <option key={optionValue} value={optionValue}>
+                  {copy.sortPrefix}:{' '}
+                  {optionValue === 'priority_desc'
+                    ? copy.sortPriority
+                    : optionValue === 'title_asc'
+                      ? copy.sortTitle
+                      : copy.sortUpdated}
                 </option>
               ))}
             </select>
@@ -1237,7 +1380,7 @@ const Templates: React.FC = () => {
                     : 'text-slate-600 hover:text-brand-navy'
                 }`}
               >
-                Collection Premium ({ESSENTIAL_TEMPLATE_IDS.length})
+                {copy.collectionPremium} ({ESSENTIAL_TEMPLATE_IDS.length})
               </button>
               <button
                 type="button"
@@ -1248,7 +1391,7 @@ const Templates: React.FC = () => {
                     : 'text-slate-600 hover:text-brand-navy'
                 }`}
               >
-                Tous ({templates.length})
+                {copy.collectionAll} ({templates.length})
               </button>
             </div>
             <label className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wide text-slate-600">
@@ -1258,17 +1401,18 @@ const Templates: React.FC = () => {
                 onChange={(event) => setWithComplianceOnly(event.target.checked)}
                 className="h-4 w-4 rounded-sm border-slate-300 text-brand-steel focus:ring-brand-steel"
               />
-              Avec GDPR/NIS2
+              {copy.withCompliance}
             </label>
             <span className="text-xs font-mono uppercase tracking-wide text-slate-500">
-              {filteredTemplates.length} templates ({COLLECTION_MODE_LABELS[collectionMode]})
+              {filteredTemplates.length} {copy.templateCountLabel} (
+              {collectionMode === 'essentials' ? copy.collectionPremium : copy.collectionAll})
             </span>
           </div>
         </section>
 
         {filteredTemplates.length === 0 ? (
           <section className="rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-            Aucun template ne correspond aux filtres actuels.
+            {copy.noTemplate}
           </section>
         ) : (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1313,16 +1457,16 @@ const Templates: React.FC = () => {
 
                     <div className="mb-5 flex items-center gap-2 text-xs text-slate-500">
                       <Calendar size={12} />
-                      MAJ {formatDate(template.updatedAt)}
+                      {copy.updatedShort} {formatDate(template.updatedAt, locale)}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => openTemplate(template)}
                       className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-steel transition-colors hover:text-brand-navy"
-                      aria-label={`Ouvrir le template ${template.title}`}
+                      aria-label={`${copy.openTemplateAria} ${template.title}`}
                     >
-                      Ouvrir <ArrowRight size={14} />
+                      {copy.openTemplate} <ArrowRight size={14} />
                     </button>
                   </div>
                 </article>
@@ -1337,8 +1481,8 @@ const Templates: React.FC = () => {
           size="xl"
           title={
             selectedTemplate
-              ? `${selectedTemplate.id.toUpperCase()} — Template entreprise`
-              : 'Template'
+              ? `${selectedTemplate.id.toUpperCase()} — ${copy.drawerTitleSuffix}`
+              : copy.title
           }
         >
           {selectedTemplate && (
@@ -1355,10 +1499,10 @@ const Templates: React.FC = () => {
                   onClick={closeTemplate}
                   className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-brand-navy"
                 >
-                  <ArrowLeft size={14} /> Retour bibliothèque
+                  <ArrowLeft size={14} /> {copy.drawerBack}
                 </button>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Calendar size={12} /> {formatDate(selectedTemplate.updatedAt)}
+                  <Calendar size={12} /> {formatDate(selectedTemplate.updatedAt, locale)}
                 </div>
               </div>
 
@@ -1384,7 +1528,7 @@ const Templates: React.FC = () => {
 
               <section className="rounded-sm border border-slate-200 bg-slate-50 p-4">
                 <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                  <FileText size={14} className="text-brand-steel" /> Variables
+                  <FileText size={14} className="text-brand-steel" /> {copy.variables}
                 </h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   {selectedTemplate.variables.map((variable) => (
@@ -1425,10 +1569,10 @@ const Templates: React.FC = () => {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button variant="secondary" size="sm" icon={Wand2} onClick={prefillExamples}>
-                    Préremplir exemples
+                    {copy.prefill}
                   </Button>
                   <Button variant="outline" size="sm" icon={RefreshCcw} onClick={resetValues}>
-                    Reset
+                    {copy.reset}
                   </Button>
                 </div>
               </section>
@@ -1436,7 +1580,7 @@ const Templates: React.FC = () => {
               <section className="rounded-sm border border-slate-200 bg-white p-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                    <Tags size={14} className="text-brand-steel" /> Preview rendu
+                    <Tags size={14} className="text-brand-steel" /> {copy.preview}
                   </h3>
                   <div className="flex items-center gap-2">
                     <div className="inline-flex rounded-sm border border-slate-200 bg-slate-50 p-1">
@@ -1449,7 +1593,7 @@ const Templates: React.FC = () => {
                             : 'text-slate-600 hover:text-brand-navy'
                         }`}
                       >
-                        Aperçu visuel
+                        {copy.previewVisual}
                       </button>
                       <button
                         type="button"
@@ -1460,7 +1604,7 @@ const Templates: React.FC = () => {
                             : 'text-slate-600 hover:text-brand-navy'
                         }`}
                       >
-                        Rapport Pro
+                        {copy.previewDocument}
                       </button>
                       <button
                         type="button"
@@ -1476,7 +1620,7 @@ const Templates: React.FC = () => {
                     </div>
                     {missingRequiredVariables.length > 0 && (
                       <Badge color="alert">
-                        Variables manquantes ({missingRequiredVariables.length})
+                        {copy.missingVariables} ({missingRequiredVariables.length})
                       </Badge>
                     )}
                   </div>
@@ -1485,7 +1629,7 @@ const Templates: React.FC = () => {
                 {missingRequiredVariables.length > 0 && (
                   <div className="mb-3 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                     <div className="mb-1 inline-flex items-center gap-1 font-bold uppercase tracking-wide">
-                      <AlertTriangle size={12} /> Compléter:
+                      <AlertTriangle size={12} /> {copy.fillLabel}
                     </div>
                     {missingRequiredVariables.map((variable) => variable.label).join(', ')}
                   </div>
@@ -1495,7 +1639,7 @@ const Templates: React.FC = () => {
                   <div className="space-y-4">
                     <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
                       <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                        Titre rendu
+                        {copy.renderedTitle}
                       </p>
                       <h4 className="mt-2 text-lg font-bold leading-tight text-brand-navy [overflow-wrap:anywhere]">
                         {visualPreview.headline}
@@ -1598,7 +1742,7 @@ const Templates: React.FC = () => {
                               </p>
                             </div>
                             <p className="cg-cover-date text-[10px] font-mono uppercase tracking-[0.08em] text-slate-500">
-                              Généré le {reportGeneratedAt}
+                              {copy.generatedAt} {reportGeneratedAt}
                             </p>
                           </div>
 
@@ -1616,13 +1760,13 @@ const Templates: React.FC = () => {
                             </div>
                             <div className="cg-priority-panel rounded-sm border border-slate-200 bg-white p-3">
                               <p className="cg-priority-label text-[10px] font-mono uppercase tracking-[0.12em] text-slate-500">
-                                Priorité
+                                {copy.priority}
                               </p>
                               <p className="cg-priority-value mt-1 text-2xl font-bold text-brand-navy">
                                 {selectedTemplate.priority}
                               </p>
                               <p className="cg-priority-meta text-xs text-slate-600">
-                                Mise à jour: {formatDate(selectedTemplate.updatedAt)}
+                                {copy.updatedOn}: {formatDate(selectedTemplate.updatedAt, locale)}
                               </p>
                             </div>
                           </div>
@@ -1666,19 +1810,19 @@ const Templates: React.FC = () => {
 
                           <div className="cg-metrics grid gap-3 border-b border-slate-200 pb-3 md:grid-cols-4">
                             <article className="cg-metric">
-                              <p className="cg-metric-label">Rubriques</p>
+                              <p className="cg-metric-label">{copy.sections}</p>
                               <p className="cg-metric-value">{documentStats.sections}</p>
                             </article>
                             <article className="cg-metric">
-                              <p className="cg-metric-label">Variables</p>
+                              <p className="cg-metric-label">{copy.variables}</p>
                               <p className="cg-metric-value">{documentStats.variables}</p>
                             </article>
                             <article className="cg-metric">
-                              <p className="cg-metric-label">Obligatoires</p>
+                              <p className="cg-metric-label">{copy.required}</p>
                               <p className="cg-metric-value">{documentStats.requiredVariables}</p>
                             </article>
                             <article className="cg-metric">
-                              <p className="cg-metric-label">Références</p>
+                              <p className="cg-metric-label">{copy.references}</p>
                               <p className="cg-metric-value">{documentStats.references}</p>
                             </article>
                           </div>
@@ -1739,7 +1883,7 @@ const Templates: React.FC = () => {
                           <div className="cg-governance-grid grid gap-3 md:grid-cols-2">
                             <section className="cg-reference-box rounded-sm border border-slate-200 bg-slate-50 p-4">
                               <h5 className="cg-reference-title mb-2 text-xs font-bold uppercase tracking-[0.1em] text-brand-navy">
-                                Références de cadrage
+                                {copy.frameworkReferences}
                               </h5>
                               {selectedTemplate.references &&
                               selectedTemplate.references.length > 0 ? (
@@ -1753,14 +1897,14 @@ const Templates: React.FC = () => {
                                 </ul>
                               ) : (
                                 <p className="text-sm text-slate-600">
-                                  Ajouter ici les standards applicables (NIST, ISO, ANSSI, CIS).
+                                  {copy.frameworkFallback}
                                 </p>
                               )}
                             </section>
 
                             <section className="cg-disclaimer-box rounded-sm border border-amber-200 bg-amber-50 p-4">
                               <h5 className="cg-disclaimer-title mb-2 text-xs font-bold uppercase tracking-[0.1em] text-amber-900">
-                                Limites et validation
+                                {copy.limitsValidation}
                               </h5>
                               {selectedTemplate.disclaimers &&
                               selectedTemplate.disclaimers.length > 0 ? (
@@ -1771,8 +1915,7 @@ const Templates: React.FC = () => {
                                 </ul>
                               ) : (
                                 <p className="text-sm text-amber-900">
-                                  Ce template doit être validé par les fonctions concernées avant
-                                  diffusion.
+                                  {copy.limitsFallback}
                                 </p>
                               )}
                             </section>
@@ -1780,38 +1923,38 @@ const Templates: React.FC = () => {
 
                           <section className="cg-approval-box rounded-sm border border-slate-200 bg-white p-4">
                             <h5 className="cg-approval-title mb-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-navy">
-                              Bloc approbation interne
+                              {copy.approvalBlock}
                             </h5>
                             <p className="cg-approval-note text-sm text-slate-600">
-                              Compléter ce bloc avant publication interne ou envoi externe.
+                              {copy.approvalNote}
                             </p>
 
                             <div className="cg-signature-grid mt-3 grid gap-3 md:grid-cols-3">
                               <article className="cg-signature-card rounded-sm border border-slate-200 bg-slate-50 p-3">
                                 <p className="cg-signature-label text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                                  Rédigé par (SOC / IR)
+                                  {copy.draftedBy}
                                 </p>
                                 <div className="cg-signature-line mt-7 border-t border-slate-300"></div>
                                 <p className="cg-signature-note mt-1 text-[11px] text-slate-500">
-                                  Nom, fonction, date
+                                  {copy.signatureMeta}
                                 </p>
                               </article>
                               <article className="cg-signature-card rounded-sm border border-slate-200 bg-slate-50 p-3">
                                 <p className="cg-signature-label text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                                  Validé par (RSSI / Juridique)
+                                  {copy.validatedBy}
                                 </p>
                                 <div className="cg-signature-line mt-7 border-t border-slate-300"></div>
                                 <p className="cg-signature-note mt-1 text-[11px] text-slate-500">
-                                  Nom, fonction, date
+                                  {copy.signatureMeta}
                                 </p>
                               </article>
                               <article className="cg-signature-card rounded-sm border border-slate-200 bg-slate-50 p-3">
                                 <p className="cg-signature-label text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                                  Approbation Direction
+                                  {copy.managementApproval}
                                 </p>
                                 <div className="cg-signature-line mt-7 border-t border-slate-300"></div>
                                 <p className="cg-signature-note mt-1 text-[11px] text-slate-500">
-                                  Signature et classification
+                                  {copy.signatureApproval}
                                 </p>
                               </article>
                             </div>
@@ -1822,7 +1965,7 @@ const Templates: React.FC = () => {
                               {selectedTemplate.id.toUpperCase()} • {selectedTemplate.category}
                             </span>
                             <span>
-                              Audience cible: {selectedTemplate.audiences.join(' / ')} •{' '}
+                              {copy.targetAudience}: {selectedTemplate.audiences.join(' / ')} •{' '}
                               {reportGeneratedAt}
                             </span>
                           </footer>
@@ -1844,16 +1987,16 @@ const Templates: React.FC = () => {
                       icon={Printer}
                       onClick={printDocumentPreview}
                     >
-                      Imprimer rapport
+                      {copy.printReport}
                     </Button>
                   )}
                   <Button
                     variant="secondary"
                     size="sm"
                     icon={Copy}
-                    onClick={() => copyToClipboard(renderedPreview, 'Copié rendu ✅')}
+                    onClick={() => copyToClipboard(renderedPreview, copy.copiedRendered)}
                   >
-                    Copier rendu
+                    {copy.copyRendered}
                   </Button>
                   <Button
                     variant="outline"
@@ -1861,15 +2004,15 @@ const Templates: React.FC = () => {
                     icon={Download}
                     onClick={downloadRenderedTemplate}
                   >
-                    Télécharger .md
+                    {copy.downloadMd}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     icon={Copy}
-                    onClick={() => copyToClipboard(selectedTemplate.content, 'Copié brut ✅')}
+                    onClick={() => copyToClipboard(selectedTemplate.content, copy.copiedRaw)}
                   >
-                    Copier brut
+                    {copy.copyRaw}
                   </Button>
                 </div>
               </section>
@@ -1877,7 +2020,7 @@ const Templates: React.FC = () => {
               {selectedTemplate.tags.length > 0 && (
                 <section className="rounded-sm border border-slate-200 bg-slate-50 p-4">
                   <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                    Tags
+                    {isEnglish ? 'Tags' : 'Tags'}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedTemplate.tags.map((tag) => (
@@ -1892,7 +2035,7 @@ const Templates: React.FC = () => {
               {selectedTemplate.references && selectedTemplate.references.length > 0 && (
                 <section className="rounded-sm border border-slate-200 bg-white p-4">
                   <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                    Références
+                    {copy.references}
                   </h3>
                   <ul className="space-y-2 text-sm text-slate-700">
                     {selectedTemplate.references.map((reference) => (
@@ -1906,7 +2049,7 @@ const Templates: React.FC = () => {
                             rel="noreferrer"
                             className="ml-2 text-brand-steel hover:text-brand-navy"
                           >
-                            (lien)
+                            {isEnglish ? '(link)' : '(lien)'}
                           </a>
                         ) : null}
                       </li>
@@ -1918,7 +2061,7 @@ const Templates: React.FC = () => {
               {selectedTemplate.disclaimers && selectedTemplate.disclaimers.length > 0 && (
                 <section className="rounded-sm border border-amber-200 bg-amber-50 p-4">
                   <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-amber-900">
-                    Limites / disclaimer
+                    {copy.limitsValidation}
                   </h3>
                   <ul className="space-y-2 text-sm text-amber-900">
                     {selectedTemplate.disclaimers.map((disclaimer) => (

@@ -1,16 +1,20 @@
 import React from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Calendar, Clock3, Tag } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import { Badge, Button, TechSeparator } from '../components/UI';
 import { blogPosts } from '../data';
+import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
 
 const BlogDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const locale = getLocaleFromPathname(location.pathname);
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const post = blogPosts.find((item) => item.slug === slug);
 
   if (!post) {
-    return <Navigate to="/blog" replace />;
+    return <Navigate to={localizedPath('/blog')} replace />;
   }
 
   const articleUrl = `https://cyber-guide.fr/blog/${post.slug}`;
@@ -72,7 +76,7 @@ const BlogDetail: React.FC = () => {
       <div className="border-b border-brand-steel/20 bg-brand-navy pb-12 pt-24 text-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <Link
-            to="/blog"
+            to={localizedPath('/blog')}
             className="mb-6 inline-flex items-center text-xs font-mono uppercase tracking-widest text-brand-light/80 transition-colors hover:text-white"
           >
             <ArrowLeft size={14} className="mr-2" /> Retour au journal
@@ -122,7 +126,7 @@ const BlogDetail: React.FC = () => {
             <p className="text-xs font-mono uppercase tracking-widest text-slate-400">
               Derniere mise a jour: {post.updatedDate ?? post.publishedDate}
             </p>
-            <Link to="/guides">
+            <Link to={localizedPath('/guides')}>
               <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
                 Ouvrir les guides lies
               </Button>

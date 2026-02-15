@@ -1,13 +1,76 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from './UI';
 import { PageTransition } from './Motion';
+import {
+  buildLocalizedPath,
+  getLocaleFromPathname,
+  getPathWithQueryHash,
+  setStoredLocale,
+  stripLocalePrefix,
+  switchLocalePath,
+  type SupportedLocale,
+} from '../utils/locale';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const locale = getLocaleFromPathname(location.pathname);
+  const normalizedPath = stripLocalePrefix(location.pathname);
+
+  const copy =
+    locale === 'en'
+      ? {
+          skipToContent: 'Skip to content',
+          logoAriaLabel: 'Back to home',
+          nav: {
+            analyses: 'Analyses',
+            guides: 'Guides',
+            projects: 'Projects',
+            tools: 'Tools',
+            templates: 'Templates',
+            about: 'About',
+          },
+          edition: 'Edition 2026',
+          contact: 'Contact',
+          mission: 'Mission',
+          missionDescription:
+            'Defensive analysis and tooling platform for operational cyber teams. Priority: actionable workflows, reliable standards, and real-world execution.',
+          copyright: '© 2026 CYBER GUIDE.',
+          navigation: 'Navigation',
+          sources: 'Sources & Frameworks',
+          viewDetails: 'View details',
+          strictDefensive: 'STRICTLY DEFENSIVE // OPERATIONAL CYBERSECURITY',
+          journal: 'Journal',
+          languageSwitcherAria: 'Change language',
+        }
+      : {
+          skipToContent: 'Aller au contenu',
+          logoAriaLabel: 'Retour Accueil',
+          nav: {
+            analyses: 'Analyses',
+            guides: 'Guides',
+            projects: 'Projets',
+            tools: 'Outils',
+            templates: 'Templates',
+            about: 'A Propos',
+          },
+          edition: 'Edition 2026',
+          contact: 'Contact',
+          mission: 'Mission',
+          missionDescription:
+            "Plateforme d'analyse et d'outillage defensif pour les equipes cyber operationnelles. Priorite: parcours actionnables, standards fiables et execution en conditions reelles.",
+          copyright: '© 2026 CYBER GUIDE.',
+          navigation: 'Navigation',
+          sources: 'Sources & Referentiels',
+          viewDetails: 'Voir details',
+          strictDefensive: 'STRICTEMENT DEFENSIF // CYBER OPERATIONNELLE',
+          journal: 'Journal',
+          languageSwitcherAria: 'Changer de langue',
+        };
 
   useEffect(() => {
     let ticking = false;
@@ -51,13 +114,33 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, [isMobileMenuOpen]);
 
   const navLinks = [
-    { name: 'Analyses', path: '/analyses' },
-    { name: 'Guides', path: '/guides' },
-    { name: 'Projets', path: '/projets' },
-    { name: 'Outils', path: '/outils' },
-    { name: 'Templates', path: '/templates' },
-    { name: 'A Propos', path: '/a-propos' },
+    { name: copy.nav.analyses, path: '/analyses' },
+    { name: copy.nav.guides, path: '/guides' },
+    { name: copy.nav.projects, path: '/projets' },
+    { name: copy.nav.tools, path: '/outils' },
+    { name: copy.nav.templates, path: '/templates' },
+    { name: copy.nav.about, path: '/a-propos' },
   ];
+
+  const isRouteActive = (path: string): boolean => {
+    if (path === '/') {
+      return normalizedPath === '/';
+    }
+
+    return normalizedPath === path || normalizedPath.startsWith(`${path}/`);
+  };
+
+  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+
+  const handleLanguageSwitch = (nextLocale: SupportedLocale) => {
+    const currentPath = getPathWithQueryHash(location);
+    setStoredLocale(nextLocale);
+    const targetPath = switchLocalePath(currentPath, nextLocale);
+    if (targetPath !== currentPath) {
+      navigate(targetPath);
+    }
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-brand-navy selection:bg-brand-steel selection:text-white overflow-x-hidden">
@@ -65,7 +148,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         href="#main-content"
         className="absolute left-4 top-2 z-[60] -translate-y-16 rounded-sm border border-white/30 bg-brand-navy px-3 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-md transition-transform focus:translate-y-0"
       >
-        Aller au contenu
+        {copy.skipToContent}
       </a>
       {/* NAVBAR PREMIUM */}
       <nav
@@ -80,9 +163,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="flex min-h-[56px] items-center justify-between md:min-h-[64px]">
             {/* LOGO WORDMARK */}
             <Link
-              to="/"
+              to={localizedPath('/')}
               className="group relative z-50 focus:outline-none flex items-center"
-              aria-label="Retour Accueil"
+              aria-label={copy.logoAriaLabel}
             >
               <div className="relative flex h-9 items-center justify-start transition-all duration-300 ease-out md:h-10">
                 <img
@@ -103,15 +186,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
-                  to={link.path}
+                  to={localizedPath(link.path)}
                   className={`relative px-3 lg:px-4 py-2 text-sm font-medium transition-colors uppercase tracking-wide group ${
-                    location.pathname.startsWith(link.path)
+                    isRouteActive(link.path)
                       ? 'text-white'
                       : 'text-brand-pale/90 hover:text-white'
                   }`}
                 >
                   <span className="relative z-10">{link.name}</span>
-                  {location.pathname.startsWith(link.path) && (
+                  {isRouteActive(link.path) && (
                     <div className="absolute bottom-1 left-3 right-3 h-px bg-brand-gold shadow-[0_0_8px_rgba(198,161,91,0.8)]"></div>
                   )}
                   <span className="absolute inset-0 bg-white/5 rounded-sm scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 -z-0"></span>
@@ -119,16 +202,43 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               ))}
               <div className="pl-6 ml-2 border-l border-white/10">
                 <span className="mr-4 hidden xl:inline-flex rounded-sm border border-white/15 bg-white/5 px-2 py-1 text-[10px] font-mono uppercase tracking-widest text-brand-light">
-                  Edition 2026
+                  {copy.edition}
                 </span>
-                <Link to="/contact">
+                <span
+                  className="mr-3 inline-flex overflow-hidden rounded-sm border border-white/20 text-[10px] font-mono uppercase"
+                  aria-label={copy.languageSwitcherAria}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageSwitch('fr')}
+                    className={`px-2 py-1 transition-colors ${
+                      locale === 'fr'
+                        ? 'bg-white text-brand-navy'
+                        : 'bg-transparent text-brand-light hover:bg-white/10'
+                    }`}
+                  >
+                    FR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageSwitch('en')}
+                    className={`px-2 py-1 transition-colors ${
+                      locale === 'en'
+                        ? 'bg-white text-brand-navy'
+                        : 'bg-transparent text-brand-light hover:bg-white/10'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </span>
+                <Link to={localizedPath('/contact')}>
                   <Button
                     as="span"
                     variant="outline"
                     size="sm"
                     className="!border-brand-steel !text-white hover:!bg-brand-steel hover:!text-white hover:!shadow-glow transition-all duration-300"
                   >
-                    Contact
+                    {copy.contact}
                   </Button>
                 </Link>
               </div>
@@ -158,16 +268,46 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
-                  to={link.path}
+                  to={localizedPath(link.path)}
                   className="text-lg font-display font-medium text-white hover:text-brand-gold py-3 pl-4 transition-all border-l-2 border-transparent hover:border-brand-gold hover:bg-white/5"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.name}
                 </Link>
               ))}
-              <Link to="/contact" className="pt-4 px-4" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="px-4 pt-2">
+                <div className="inline-flex overflow-hidden rounded-sm border border-white/20 text-[10px] font-mono uppercase">
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageSwitch('fr')}
+                    className={`px-3 py-1.5 transition-colors ${
+                      locale === 'fr'
+                        ? 'bg-white text-brand-navy'
+                        : 'bg-transparent text-brand-light hover:bg-white/10'
+                    }`}
+                  >
+                    FR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageSwitch('en')}
+                    className={`px-3 py-1.5 transition-colors ${
+                      locale === 'en'
+                        ? 'bg-white text-brand-navy'
+                        : 'bg-transparent text-brand-light hover:bg-white/10'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+              </div>
+              <Link
+                to={localizedPath('/contact')}
+                className="pt-4 px-4"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <Button variant="primary" className="w-full justify-center">
-                  Contact
+                  {copy.contact}
                 </Button>
               </Link>
             </div>
@@ -188,60 +328,58 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="md:col-span-4 pr-8">
               <h3 className="text-white font-display font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2">
                 <div className="w-1 h-4 bg-brand-gold"></div>
-                Mission
+                {copy.mission}
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Plateforme d'analyse et d'outillage defensif pour les equipes cyber operationnelles.
-                Priorite: parcours actionnables, standards fiables et execution en conditions
-                reelles.
+                {copy.missionDescription}
               </p>
-              <div className="text-xs text-slate-500 font-mono">© 2026 CYBER GUIDE.</div>
+              <div className="text-xs text-slate-500 font-mono">{copy.copyright}</div>
             </div>
 
             {/* Navigation Links */}
             <div className="md:col-span-3">
               <h4 className="text-white font-display font-bold uppercase tracking-wider text-sm mb-4">
-                Navigation
+                {copy.navigation}
               </h4>
               <div className="grid grid-cols-2 gap-x-4">
                 <ul className="space-y-3 text-sm">
                   <li>
                     <Link
-                      to="/analyses"
+                      to={localizedPath('/analyses')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Analyses
+                      {copy.nav.analyses}
                     </Link>
                   </li>
                   <li>
                     <Link
-                      to="/outils"
+                      to={localizedPath('/outils')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Outils
+                      {copy.nav.tools}
                     </Link>
                   </li>
                   <li>
                     <Link
-                      to="/guides"
+                      to={localizedPath('/guides')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Guides
+                      {copy.nav.guides}
                     </Link>
                   </li>
                   <li>
                     <Link
-                      to="/templates"
+                      to={localizedPath('/templates')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Templates
+                      {copy.nav.templates}
                     </Link>
                   </li>
                 </ul>
                 <ul className="space-y-3 text-sm">
                   <li>
                     <Link
-                      to="/sources"
+                      to={localizedPath('/sources')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
                       Sources
@@ -249,18 +387,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   </li>
                   <li>
                     <Link
-                      to="/a-propos"
+                      to={localizedPath('/a-propos')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      A Propos
+                      {copy.nav.about}
                     </Link>
                   </li>
                   <li>
                     <Link
-                      to="/contact"
+                      to={localizedPath('/contact')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Contact
+                      {copy.contact}
                     </Link>
                   </li>
                 </ul>
@@ -271,13 +409,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="md:col-span-5">
               <div className="flex justify-between items-end mb-6">
                 <h4 className="text-white font-display font-bold uppercase tracking-wider text-sm">
-                  Sources & Referentiels
+                  {copy.sources}
                 </h4>
                 <Link
-                  to="/sources"
+                  to={localizedPath('/sources')}
                   className="text-[10px] text-brand-steel font-bold uppercase hover:text-white transition-colors flex items-center gap-1 group"
                 >
-                  Voir details{' '}
+                  {copy.viewDetails}{' '}
                   <ArrowRight
                     size={10}
                     className="group-hover:translate-x-1 transition-transform"
@@ -344,20 +482,20 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-xs text-slate-500 font-mono tracking-wide flex items-center gap-2">
-              <ShieldCheck size={14} /> STRICTEMENT DEFENSIF // CYBER OPERATIONNELLE
+              <ShieldCheck size={14} /> {copy.strictDefensive}
             </div>
             <div className="flex items-center gap-6">
               <Link
-                to="/blog"
+                to={localizedPath('/blog')}
                 className="text-xs font-mono uppercase tracking-wide text-slate-500 hover:text-white transition-colors"
               >
-                Journal
+                {copy.journal}
               </Link>
               <Link
-                to="/contact"
+                to={localizedPath('/contact')}
                 className="text-xs font-mono uppercase tracking-wide text-slate-500 hover:text-white transition-colors"
               >
-                Contact
+                {copy.contact}
               </Link>
             </div>
           </div>

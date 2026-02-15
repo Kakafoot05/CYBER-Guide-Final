@@ -149,7 +149,19 @@ const dynamicEntries = [
   })),
 ];
 
-const entries = [...staticEntries, ...dynamicEntries].filter((entry, index, all) => {
+const toEnglishPath = (path) => (path === '/' ? '/en' : `/en${path}`);
+
+const localizedEntries = [...staticEntries, ...dynamicEntries].flatMap((entry) => [
+  entry,
+  {
+    ...entry,
+    path: toEnglishPath(entry.path),
+    // Keep EN URLs indexable but slightly below FR canonical market priority.
+    priority: String(Math.max(0.1, Number.parseFloat(entry.priority) - 0.05).toFixed(2)),
+  },
+]);
+
+const entries = localizedEntries.filter((entry, index, all) => {
   return all.findIndex((candidate) => candidate.path === entry.path) === index;
 });
 
