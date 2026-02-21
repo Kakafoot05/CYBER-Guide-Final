@@ -6,6 +6,14 @@ export const LOCALE_STORAGE_KEY = 'cg_locale';
 
 const ABSOLUTE_URL_PATTERN = /^[a-z]+:\/\//i;
 const NON_LOCALIZED_PATH_PATTERN = /^(mailto:|tel:|#)/i;
+const FR_TO_EN_PATH_MAP: Record<string, string> = {
+  '/projets': '/projects',
+  '/outils': '/tools',
+  '/a-propos': '/about',
+};
+const EN_TO_FR_PATH_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(FR_TO_EN_PATH_MAP).map(([frPath, enPath]) => [enPath, frPath]),
+) as Record<string, string>;
 
 const ensureLeadingSlash = (value: string): string => {
   const trimmed = value.trim();
@@ -47,20 +55,21 @@ export const getLocaleFromPathname = (pathname: string): SupportedLocale => {
 
 export const stripLocalePrefix = (pathname: string): string => {
   const normalizedPath = ensureLeadingSlash(pathname);
+  const toCanonicalFrenchPath = (value: string): string => EN_TO_FR_PATH_MAP[value] ?? value;
 
   if (normalizedPath === ENGLISH_LOCALE_PREFIX || normalizedPath === '/fr') {
     return '/';
   }
 
   if (normalizedPath.startsWith('/en/')) {
-    return normalizedPath.slice('/en'.length) || '/';
+    return toCanonicalFrenchPath(normalizedPath.slice('/en'.length) || '/');
   }
 
   if (normalizedPath.startsWith('/fr/')) {
-    return normalizedPath.slice('/fr'.length) || '/';
+    return toCanonicalFrenchPath(normalizedPath.slice('/fr'.length) || '/');
   }
 
-  return normalizedPath;
+  return toCanonicalFrenchPath(normalizedPath);
 };
 
 export const buildLocalizedPath = (path: string, locale: SupportedLocale): string => {
@@ -74,7 +83,7 @@ export const buildLocalizedPath = (path: string, locale: SupportedLocale): strin
     locale === 'en'
       ? normalizedPathname === '/'
         ? ENGLISH_LOCALE_PREFIX
-        : `${ENGLISH_LOCALE_PREFIX}${normalizedPathname}`
+        : `${ENGLISH_LOCALE_PREFIX}${FR_TO_EN_PATH_MAP[normalizedPathname] ?? normalizedPathname}`
       : normalizedPathname;
 
   return `${localizedPathname}${suffix}`;

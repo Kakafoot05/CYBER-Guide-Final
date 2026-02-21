@@ -32,9 +32,9 @@ export interface GuidePillar {
 export const guides: GuidePillar[] = [
   {
     slug: 'securite-active-directory',
-    title: 'Guide Securite Active Directory',
+    title: 'Guide Sécurité Active Directory',
     excerpt:
-      'Plan defensif concret pour reduire les mouvements lateraux, proteger Tier 0 et renforcer la resilience AD.',
+      'Plan défensif concret pour réduire les mouvements latéraux, protéger Tier 0 et renforcer la résilience AD.',
     category: 'Identity & Infrastructure',
     readTime: '12 min',
     updatedDate: '2026-02-08',
@@ -42,60 +42,60 @@ export const guides: GuidePillar[] = [
       'active directory security',
       'tiering ad',
       'hardening ad',
-      'securite windows',
+      'sécurité windows',
       'tier 0',
     ],
     intro:
-      'Active Directory reste la cible principale des attaques de rancon. Ce guide synthese les controles qui produisent un impact rapide et mesurable, sans bloquer l exploitation quotidienne.',
+      "Active Directory reste la cible principale des attaques de rançon. Ce guide synthétise les contrôles qui produisent un impact rapide et mesurable, sans bloquer l'exploitation quotidienne.",
     sections: [
       {
         id: 'fondations',
         title: '1. Fondations de confiance',
         paragraphs: [
-          'Commencez par reduire la surface d administration: comptes separes, MFA fort et postes d administration dedies.',
-          'Le modele Tier 0, Tier 1 et Tier 2 doit etre applique techniquement via des OU, GPO et restrictions de connexion explicites.',
+          "Commencez par réduire la surface d'administration : comptes séparés, MFA fort et postes d'administration dédiés.",
+          'Le modèle Tier 0, Tier 1 et Tier 2 doit être appliqué techniquement via des OU, GPO et restrictions de connexion explicites.',
         ],
         checklist: [
-          'Limiter les comptes Domain Admin a un nombre tres restreint',
+          'Limiter les comptes Domain Admin à un nombre très restreint',
           'Activer LAPS sur postes et serveurs',
-          'Bloquer les connexions privilegiees sur postes utilisateurs',
+          'Bloquer les connexions privilégiées sur postes utilisateurs',
         ],
       },
       {
         id: 'detection',
-        title: '2. Detection et containment',
+        title: '2. Détection et containment',
         paragraphs: [
-          'Une defense AD efficace combine prevention et detection. Surveillez les indicateurs de DCSync, ajout de comptes privilegies et delegations suspectes.',
-          'Definissez des playbooks de containment pour revoquer rapidement sessions, secrets et tickets Kerberos.',
+          'Une défense AD efficace combine prévention et détection. Surveillez les indicateurs de DCSync, ajout de comptes privilégiés et délégations suspectes.',
+          'Définissez des playbooks de containment pour révoquer rapidement sessions, secrets et tickets Kerberos.',
         ],
         checklist: [
-          'Alerter sur creation ou modification des groupes admin critiques',
+          'Alerter sur création ou modification des groupes admin critiques',
           'Surveiller les authentifications anormales et impossible travel',
-          'Tester un reset controle de credentials privilegies',
+          'Tester un reset contrôlé de credentials privilégiés',
         ],
       },
       {
         id: 'gouvernance',
         title: '3. Gouvernance continue',
         paragraphs: [
-          'La robustesse AD n est pas un projet one-shot. Programmez des revues d acces trimestrielles et des exercices de restauration.',
-          'Mesurez la maturite avec des indicateurs simples: nombre de comptes privilegies, couverture MFA, delai moyen de remediations critiques.',
+          "La robustesse AD n'est pas un projet one-shot. Programmez des revues d'accès trimestrielles et des exercices de restauration.",
+          'Mesurez la maturité avec des indicateurs simples : nombre de comptes privilégiés, couverture MFA, délai moyen de remédiations critiques.',
         ],
         checklist: [
           'Mettre en place une revue trimestrielle des droits admin',
-          'Executer un test de restauration AD annuel',
-          'Tracer un plan de remediation priorise sur 90 jours',
+          'Exécuter un test de restauration AD annuel',
+          'Tracer un plan de remédiation priorisé sur 90 jours',
         ],
       },
     ],
     faq: [
       {
-        question: 'Quel est le premier controle a deployer sur un AD faible ?',
+        question: 'Quel est le premier contrôle à déployer sur un AD faible ?',
         answer:
-          'La separation des comptes admin et user, combinee a MFA fort, produit le meilleur ratio effort/impact.',
+          'La séparation des comptes admin et user, combinée à MFA fort, produit le meilleur ratio effort/impact.',
       },
       {
-        question: 'Peut-on securiser AD sans refondre toute l infra ?',
+        question: "Peut-on sécuriser AD sans refondre toute l'infra ?",
         answer:
           'Oui. Un plan en vagues successives (Tiering, LAPS, restrictions de logon, alertes critiques) permet une progression rapide.',
       },
@@ -103,15 +103,15 @@ export const guides: GuidePillar[] = [
     relatedAnalyses: ['ad-tiering', 'identite-mfa-fatigue'],
     relatedPlaybooks: ['pb-006', 'pb-008', 'pb-014'],
     relatedLinks: [
-      { label: 'Explorer les outils defensifs', path: '/outils' },
+      { label: 'Explorer les outils défensifs', path: '/outils' },
       { label: 'Voir les sources et standards', path: '/sources' },
     ],
   },
   {
     slug: 'reponse-ransomware-pme',
-    title: 'Guide Reponse Ransomware PME',
+    title: 'Guide Réponse Ransomware PME',
     excerpt:
-      'Playbook de preparation et de reponse pour reduire le temps de crise, proteger les sauvegardes et restaurer plus vite.',
+      'Playbook de préparation et de réponse pour réduire le temps de crise, protéger les sauvegardes et restaurer plus vite.',
     category: 'Incident Response',
     readTime: '11 min',
     updatedDate: '2026-01-28',
@@ -123,58 +123,58 @@ export const guides: GuidePillar[] = [
       'pme cyber resilience',
     ],
     intro:
-      'La difference entre une crise maitrisee et un arret prolonge repose sur la preparation. Ce guide priorise les actions qui diminuent le risque de propagation et accelerent la reprise.',
+      'La différence entre une crise maîtrisée et un arrêt prolongé repose sur la préparation. Ce guide priorise les actions qui diminuent le risque de propagation et accélèrent la reprise.',
     sections: [
       {
         id: 'preparation',
-        title: '1. Preparation avant incident',
+        title: '1. Préparation avant incident',
         paragraphs: [
-          'Documentez les roles de crise, les canaux de communication hors bande et la liste des actifs critiques.',
-          'Les sauvegardes doivent etre immuables ou hors ligne, avec des tests de restauration reguliers en environnement isole.',
+          'Documentez les rôles de crise, les canaux de communication hors bande et la liste des actifs critiques.',
+          'Les sauvegardes doivent être immuables ou hors ligne, avec des tests de restauration réguliers en environnement isolé.',
         ],
         checklist: [
           'Maintenir un annuaire de crise hors bande',
-          'Verifier l immutabilite des sauvegardes critiques',
-          'Exercer un scenario ransomware au moins 2 fois par an',
+          "Vérifier l'immutabilité des sauvegardes critiques",
+          'Exercer un scénario ransomware au moins 2 fois par an',
         ],
       },
       {
         id: 'containment',
         title: '2. Containment et investigation',
         paragraphs: [
-          'A la detection, isolez les systemes touches sans detruire les preuves utiles. La priorite est d arreter la propagation laterale.',
-          'Conservez les journaux, identifiez le patient zero et activez les playbooks de communication management/ops.',
+          "À la détection, isolez les systèmes touchés sans détruire les preuves utiles. La priorité est d'arrêter la propagation latérale.",
+          'Conservez les journaux, identifiez le patient zéro et activez les playbooks de communication management/ops.',
         ],
         checklist: [
-          'Isoler les endpoints suspects via EDR ou segmentation reseau',
+          'Isoler les endpoints suspects via EDR ou segmentation réseau',
           'Capturer les artefacts critiques (notes, logs, IOC)',
           'Notifier rapidement les parties prenantes internes',
         ],
       },
       {
         id: 'reconstruction',
-        title: '3. Reconstruction et retour a la normale',
+        title: '3. Reconstruction et retour à la normale',
         paragraphs: [
-          'Favorisez le rebuild maitrise plutot que le nettoyage partiel. Validez les acces et secrets avant remise en production.',
-          'Formalisez le post-mortem: cause racine, delai de detection, actions correctives et calendrier de suivi.',
+          'Favorisez le rebuild maîtrisé plutôt que le nettoyage partiel. Validez les accès et secrets avant remise en production.',
+          'Formalisez le post-mortem : cause racine, délai de détection, actions correctives et calendrier de suivi.',
         ],
         checklist: [
-          'Reinitialiser les comptes et secrets sensibles',
-          'Restaurer depuis des sauvegardes verifiees',
-          'Suivre un plan de remediations post-incident sous 30 jours',
+          'Réinitialiser les comptes et secrets sensibles',
+          'Restaurer depuis des sauvegardes vérifiées',
+          'Suivre un plan de remédiations post-incident sous 30 jours',
         ],
       },
     ],
     faq: [
       {
-        question: 'Faut-il payer une rancon pour redemarrer vite ?',
+        question: 'Faut-il payer une rançon pour redémarrer vite ?',
         answer:
-          'Le paiement ne garantit ni decryption ni non-divulgation. La meilleure strategie reste preparation, containment et restauration controlee.',
+          'Le paiement ne garantit ni décryption ni non-divulgation. La meilleure stratégie reste préparation, containment et restauration contrôlée.',
       },
       {
-        question: 'Quel KPI suivre apres crise ?',
+        question: 'Quel KPI suivre après crise ?',
         answer:
-          'Le MTTR, la couverture des sauvegardes teste, et le taux de remediations closes dans les 30 jours.',
+          'Le MTTR, la couverture des sauvegardes testées, et le taux de remédiations closes dans les 30 jours.',
       },
     ],
     relatedAnalyses: ['ransomware-readiness', 'identite-mfa-fatigue'],
@@ -186,7 +186,7 @@ export const guides: GuidePillar[] = [
   },
   {
     slug: 'conformite-nis2-feuille-de-route',
-    title: 'Guide Conformite NIS2',
+    title: 'Guide Conformité NIS2',
     excerpt:
       'Feuille de route pragmatique pour aligner gouvernance, gestion de risque et obligations de notification NIS2.',
     category: 'Governance & Compliance',
@@ -200,45 +200,45 @@ export const guides: GuidePillar[] = [
       'security program roadmap',
     ],
     intro:
-      'NIS2 impose une demarche continue: gouvernance, mesures techniques et reporting. Ce guide propose un chemin incremental, adapte a une equipe securite operationnelle.',
+      'NIS2 impose une démarche continue : gouvernance, mesures techniques et reporting. Ce guide propose un chemin incrémental, adapté à une équipe sécurité opérationnelle.',
     sections: [
       {
         id: 'gouvernance',
-        title: '1. Gouvernance et perimetre',
+        title: '1. Gouvernance et périmètre',
         paragraphs: [
-          'Identifiez les actifs essentiels, les dependances fournisseurs et les responsables de decision.',
-          'Le niveau direction doit valider les priorites, budgets et arbitrages de risque.',
+          'Identifiez les actifs essentiels, les dépendances fournisseurs et les responsables de décision.',
+          'Le niveau direction doit valider les priorités, budgets et arbitrages de risque.',
         ],
         checklist: [
           'Cartographier les services essentiels',
           'Nommer les responsables cyber par domaine',
-          'Definir une politique de gestion des risques cyber',
+          'Définir une politique de gestion des risques cyber',
         ],
       },
       {
         id: 'mesures',
-        title: '2. Mesures de securite minimales',
+        title: '2. Mesures de sécurité minimales',
         paragraphs: [
-          'Priorisez MFA, gestion des vulnerabilites, segmentation, sauvegardes et supervision continue.',
-          'Chaque controle doit avoir un proprietaire, un niveau de couverture et une cible d amelioration trimestrielle.',
+          'Priorisez MFA, gestion des vulnérabilités, segmentation, sauvegardes et supervision continue.',
+          "Chaque contrôle doit avoir un propriétaire, un niveau de couverture et une cible d'amélioration trimestrielle.",
         ],
         checklist: [
-          'Mettre a jour un plan de patch management base risque',
-          'Durcir les acces privilegies et les tiers',
-          'Tracer la couverture de journalisation et d alerting',
+          'Mettre à jour un plan de patch management basé risque',
+          'Durcir les accès privilégiés et les tiers',
+          "Tracer la couverture de journalisation et d'alerting",
         ],
       },
       {
         id: 'notification',
         title: '3. Notification incident et preuve',
         paragraphs: [
-          'Preparer a froid les workflows de notification reduit fortement les erreurs en situation de crise.',
-          'Conservez les preuves techniques et de gouvernance pour demonstrer la diligence et l amelioration continue.',
+          'Préparer à froid les workflows de notification réduit fortement les erreurs en situation de crise.',
+          "Conservez les preuves techniques et de gouvernance pour démontrer la diligence et l'amélioration continue.",
         ],
         checklist: [
           'Formaliser un workflow de notification incident',
           'Conserver les preuves de tests/exercices',
-          'Mettre en place une revue semestrielle de conformite',
+          'Mettre en place une revue semestrielle de conformité',
         ],
       },
     ],
@@ -246,12 +246,12 @@ export const guides: GuidePillar[] = [
       {
         question: 'NIS2 concerne-t-il uniquement les grandes entreprises ?',
         answer:
-          'Non. Le perimetre depend du secteur, du role dans la chaine de valeur et du niveau de criticite des services.',
+          'Non. Le périmètre dépend du secteur, du rôle dans la chaîne de valeur et du niveau de criticité des services.',
       },
       {
-        question: 'Par quoi commencer pour etre credibles rapidement ?',
+        question: 'Par quoi commencer pour être crédibles rapidement ?',
         answer:
-          'Par un inventaire fiable, un plan de risque priorise, et des controles de base mesurables (MFA, backups, vuln management).',
+          'Par un inventaire fiable, un plan de risque priorisé, et des contrôles de base mesurables (MFA, backups, vuln management).',
       },
     ],
     relatedAnalyses: ['ransomware-readiness', 'ad-tiering'],

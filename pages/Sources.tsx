@@ -1,14 +1,104 @@
-﻿import React from 'react';
+﻿import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShieldHeader, TechSeparator, Badge, Button } from '../components/UI';
 import { ExternalLink, Calendar, BookOpen, ShieldCheck, Rss, ArrowUpRight } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
+import { getLocalizedContent } from '../utils/contentLocale';
 
 const Sources: React.FC = () => {
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const { projects } = useMemo(() => getLocalizedContent(locale), [locale]);
+  const projectSourceIndex = useMemo(() => {
+    const sourceMap = new Map<
+      string,
+      {
+        name: string;
+        url: string;
+        note?: string;
+        projectIds: string[];
+      }
+    >();
+
+    projects.forEach((project) => {
+      project.sources?.forEach((source) => {
+        const existing = sourceMap.get(source.url);
+        if (existing) {
+          if (!existing.projectIds.includes(project.id)) {
+            existing.projectIds.push(project.id);
+          }
+        } else {
+          sourceMap.set(source.url, {
+            name: source.name,
+            url: source.url,
+            note: source.note,
+            projectIds: [project.id],
+          });
+        }
+      });
+    });
+
+    return Array.from(sourceMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects]);
+
+  const copy = isEnglish
+    ? {
+        seoTitle: 'Cyber Sources and Frameworks',
+        seoDescription:
+          'ANSSI, NIST, and threat intelligence references used to build Cyber Guide analyses, templates, and case studies.',
+        headerTitle: 'Sources & Frameworks',
+        headerSubtitle: 'Technical Monitoring',
+        headerMeta: ['Standards', 'Threat Intel', 'Regulatory Frame'],
+        knowledgeTitle: 'Knowledge Architecture',
+        knowledgeBody:
+          'Cyber Guide credibility relies on strict source selection. We do not produce theory: we synthesize industry-validated standards.',
+        deepDiveTitle: 'Go further',
+        deepDiveBody:
+          'These references directly feed the platform pillar guides and operational analyses.',
+        projectSourcesTitle: 'Sources used in case studies',
+        projectSourcesBody:
+          'Each project file references official documentation used to design methods, controls and response workflows.',
+        referencedIn: 'Referenced in',
+        noProjectSources: 'No project source is documented yet.',
+        openGuides: 'Open guides',
+        seeAnalyses: 'See analyses too',
+        updated: 'Updated',
+        keyResources: 'Key resources',
+        watchFeeds: 'Recommended monitoring feeds',
+        noteTitle: 'TRANSPARENCY NOTE:',
+        noteBody:
+          'The logos and trademarks shown on this page (ANSSI, NIST, Orange Cyberdefense, CISA) remain the exclusive property of their respective owners. They are displayed for informational reference only to identify documentary sources used to build our analyses, templates and case studies. Cyber Guide is not affiliated with, sponsored by, or an official partner of these entities.',
+      }
+    : {
+        seoTitle: 'Sources et Référentiels Cyber',
+        seoDescription:
+          'Référentiels ANSSI, NIST et threat intelligence utilisés pour construire les analyses, templates et études de cas Cyber Guide.',
+        headerTitle: 'Sources & Référentiels',
+        headerSubtitle: 'Veille Technique',
+        headerMeta: ['Standards', 'Threat Intel', 'Cadre Légal'],
+        knowledgeTitle: 'Architecture de la Connaissance',
+        knowledgeBody:
+          "La crédibilité de Cyber Guide repose sur une sélection rigoureuse de sources. Nous ne produisons pas de théorie : nous synthétisons les standards validés par l'industrie.",
+        deepDiveTitle: 'Aller plus loin',
+        deepDiveBody:
+          'Ces références alimentent directement les guides piliers et les analyses opérationnelles du site.',
+        projectSourcesTitle: 'Sources utilisées dans les études de cas',
+        projectSourcesBody:
+          'Chaque dossier projet référence la documentation officielle utilisée pour concevoir les méthodes, contrôles et workflows de réponse.',
+        referencedIn: 'Utilisée dans',
+        noProjectSources: "Aucune source projet n'est encore documentée.",
+        openGuides: 'Ouvrir les guides',
+        seeAnalyses: 'Voir aussi les analyses',
+        updated: 'Mise à jour',
+        keyResources: 'Ressources Clés',
+        watchFeeds: 'Flux de Veille Recommandés',
+        noteTitle: 'NOTE DE TRANSPARENCE :',
+        noteBody:
+          "Les marques et logos cités sur cette page (ANSSI, NIST, Orange Cyberdefense, CISA) sont la propriété exclusive de leurs détenteurs respectifs. Ils sont utilisés ici uniquement à titre informatif pour identifier les sources documentaires utilisées pour construire nos analyses, templates et études de cas. Cyber Guide n'est pas affilié, sponsorisé ou partenaire officiel de ces entités.",
+      };
 
   const sources = [
     {
@@ -24,7 +114,7 @@ const Sources: React.FC = () => {
       links: [
         {
           label: "Guide d'hygiène informatique",
-          url: 'https://cyber.gouv.fr/le-guide-dhygiene-informatique',
+          url: 'https://cyber.gouv.fr/guide/guide-dhygiene-informatique/',
         },
         { label: 'État de la menace', url: 'https://cyber.gouv.fr/publications' },
         { label: 'CERT-FR Avis', url: 'https://www.cert.ssi.gouv.fr/' },
@@ -79,7 +169,7 @@ const Sources: React.FC = () => {
       type: 'Gouvernemental US',
       frequency: 'Continu',
       description:
-        'Agence federale americaine de reference pour la defense cyber et la protection des infrastructures critiques. Le catalogue KEV et les alertes CISA servent de base concrete pour prioriser les correctifs critiques.',
+        'Agence fédérale américaine de référence pour la défense cyber et la protection des infrastructures critiques. Le catalogue KEV et les alertes CISA servent de base concrète pour prioriser les correctifs critiques.',
       url: 'https://www.cisa.gov',
       links: [
         {
@@ -99,12 +189,16 @@ const Sources: React.FC = () => {
   ];
 
   const watchList = [
-    { name: 'The DFIR Report', url: 'https://thedfirreport.com/', tag: 'Technique' },
+    { name: 'CERT-FR', url: 'https://www.cert.ssi.gouv.fr/', tag: 'Alerte FR' },
     {
       name: 'CISA KEV Catalog',
       url: 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog',
       tag: 'Vulnérabilités',
     },
+    { name: 'NVD (NIST)', url: 'https://nvd.nist.gov/', tag: 'Vulnérabilités' },
+    { name: 'ENISA Publications', url: 'https://www.enisa.europa.eu/publications', tag: 'EU' },
+    { name: 'OWASP Cheat Sheet Series', url: 'https://cheatsheetseries.owasp.org/', tag: 'AppSec' },
+    { name: 'The DFIR Report', url: 'https://thedfirreport.com/', tag: 'Technique' },
     {
       name: 'Mandiant M-Trends',
       url: 'https://www.mandiant.com/resources/reports/m-trends',
@@ -115,15 +209,15 @@ const Sources: React.FC = () => {
       url: 'https://www.microsoft.com/en-us/security/blog/',
       tag: 'Cloud/Identity',
     },
-    { name: 'MITRE ATT&CK', url: 'https://attack.mitre.org/', tag: 'Framework' },
-    { name: 'BleepingComputer', url: 'https://www.bleepingcomputer.com/', tag: 'News' },
+    { name: 'MITRE ATT&CK', url: 'https://attack.mitre.org/', tag: 'Référentiel' },
+    { name: 'ANSSI Publications', url: 'https://cyber.gouv.fr/publications', tag: 'Référentiel FR' },
   ];
 
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
-        title="Sources et Referentiels Cyber"
-        description="Referentiels ANSSI, NIST et threat intelligence utilises pour construire les analyses et playbooks Cyber Guide."
+        title={copy.seoTitle}
+        description={copy.seoDescription}
         path="/sources"
         image="/assets/og/sources.svg"
         keywords={['ANSSI', 'NIST', 'CISA', 'threat intelligence', 'sources cyber', 'veille cyber']}
@@ -135,43 +229,37 @@ const Sources: React.FC = () => {
         }}
       />
       <ShieldHeader
-        title="Sources & Référentiels"
-        subtitle="Veille Technique"
-        meta={['Standards', 'Threat Intel', 'Cadre Légal']}
+        title={copy.headerTitle}
+        subtitle={copy.headerSubtitle}
+        meta={copy.headerMeta}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-2xl font-display font-bold text-brand-navy mb-4">
-            Architecture de la Connaissance
+            {copy.knowledgeTitle}
           </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            La crédibilité de Cyber Guide repose sur une sélection rigoureuse de sources. Nous ne
-            produisons pas de théorie : nous synthétisons les standards validés par l'industrie.
-          </p>
+          <p className="text-lg text-slate-600 leading-relaxed">{copy.knowledgeBody}</p>
         </div>
 
         <div className="mb-12 grid gap-4 rounded-sm border border-slate-200 bg-white p-5 md:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-              Aller plus loin
+              {copy.deepDiveTitle}
             </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Ces references alimentent directement les guides piliers et les analyses
-              operationnelles du site.
-            </p>
+            <p className="mt-2 text-sm text-slate-600">{copy.deepDiveBody}</p>
           </div>
           <div className="flex items-center justify-start gap-4 md:justify-end">
             <Link to={localizedPath('/guides')}>
               <Button as="span" variant="secondary" size="sm" icon={ArrowUpRight}>
-                Ouvrir les guides
+                {copy.openGuides}
               </Button>
             </Link>
             <Link
               to={localizedPath('/analyses')}
               className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
             >
-              Voir aussi les analyses
+              {copy.seeAnalyses}
             </Link>
           </div>
         </div>
@@ -206,7 +294,7 @@ const Sources: React.FC = () => {
                   {source.fullName}
                 </h3>
                 <div className="flex items-center gap-2 mb-4 text-xs font-mono text-slate-400">
-                  <Calendar size={12} /> Maj: {source.frequency}
+                  <Calendar size={12} /> {copy.updated}: {source.frequency}
                 </div>
 
                 <p className="text-slate-600 leading-relaxed mb-8 flex-grow">
@@ -215,7 +303,7 @@ const Sources: React.FC = () => {
 
                 <div className="space-y-3">
                   <div className="text-[10px] font-bold text-brand-navy uppercase tracking-widest flex items-center gap-2 mb-2">
-                    <BookOpen size={12} /> Ressources Clés
+                    <BookOpen size={12} /> {copy.keyResources}
                   </div>
                   {source.links.map((link, i) => (
                     <a
@@ -238,6 +326,42 @@ const Sources: React.FC = () => {
           ))}
         </div>
 
+        <div className="mb-20 rounded-sm border border-slate-200 bg-white p-6 md:p-8">
+          <div className="mb-6">
+            <h3 className="text-xl font-display font-bold text-brand-navy">{copy.projectSourcesTitle}</h3>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-600">
+              {copy.projectSourcesBody}
+            </p>
+          </div>
+
+          {projectSourceIndex.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {projectSourceIndex.map((source) => (
+                <a
+                  key={source.url}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-sm border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-steel/40 hover:bg-brand-pale/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-brand-navy">{source.name}</p>
+                      {source.note && <p className="mt-1 text-xs text-slate-600">{source.note}</p>}
+                      <p className="mt-2 text-[11px] font-mono text-slate-500">
+                        {copy.referencedIn}: {source.projectIds.join(', ')}
+                      </p>
+                    </div>
+                    <ExternalLink size={14} className="mt-1 flex-shrink-0 text-slate-400" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">{copy.noProjectSources}</p>
+          )}
+        </div>
+
         <TechSeparator />
 
         {/* SECTION 2: VEILLE RECOMMANDÉE */}
@@ -247,7 +371,7 @@ const Sources: React.FC = () => {
               <Rss size={20} />
             </div>
             <h3 className="text-xl font-display font-bold text-brand-navy uppercase tracking-tight">
-              Flux de Veille Recommandés
+              {copy.watchFeeds}
             </h3>
           </div>
 
@@ -281,11 +405,7 @@ const Sources: React.FC = () => {
             <ShieldCheck size={24} />
           </div>
           <p className="text-xs text-slate-500 font-mono max-w-2xl mx-auto leading-relaxed">
-            <strong>NOTE DE TRANSPARENCE :</strong> Les marques et logos cités sur cette page
-            (ANSSI, NIST, Orange Cyberdefense, CISA) sont la propriété exclusive de leurs détenteurs
-            respectifs. Ils sont utilisés ici uniquement à titre informatif pour identifier les
-            sources documentaires utilisées pour construire nos playbooks. Cyber Guide n'est pas
-            affilié, sponsorisé ou partenaire officiel de ces entités.
+            <strong>{copy.noteTitle}</strong> {copy.noteBody}
           </p>
         </div>
       </div>
@@ -294,3 +414,4 @@ const Sources: React.FC = () => {
 };
 
 export default Sources;
+

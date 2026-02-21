@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ShieldHeader,
@@ -8,7 +8,7 @@ import {
   TechSeparator,
   type BadgeColor,
 } from '../components/UI';
-import { templates } from '../data';
+import { getLocalizedContent } from '../utils/contentLocale';
 import type { CyberTemplate, TemplateAudience, TemplatePriority, TemplateVariable } from '../types';
 import {
   Search,
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname, stripLocalePrefix } from '../utils/locale';
+import { localizeTemplateAudience, localizeTemplatePriority } from '../utils/labels';
 
 type SortOption = 'priority_desc' | 'title_asc' | 'updated_desc';
 type TemplateValues = Record<string, string>;
@@ -275,7 +276,11 @@ const Templates: React.FC = () => {
   const locale = getLocaleFromPathname(location.pathname);
   const isEnglish = locale === 'en';
   const normalizedPath = stripLocalePrefix(location.pathname);
-  const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const { templates } = useMemo(() => getLocalizedContent(locale), [locale]);
+  const localizedPath = useCallback(
+    (path: string): string => buildLocalizedPath(path, locale),
+    [locale],
+  );
   const localizedAbsolutePath = (path: string): string =>
     `https://cyber-guide.fr${buildLocalizedPath(path, locale)}`;
   const { id: routeTemplateIdParam } = useParams<{ id?: string }>();
@@ -470,7 +475,7 @@ const Templates: React.FC = () => {
 
   const categories = useMemo(
     () => ['Tous', ...Array.from(new Set(templates.map((template) => template.category))).sort()],
-    [],
+    [templates],
   );
 
   const audiences = useMemo(
@@ -478,7 +483,7 @@ const Templates: React.FC = () => {
       'Tous',
       ...Array.from(new Set(templates.flatMap((template) => template.audiences))).sort(),
     ],
-    [],
+    [templates],
   );
 
   const searchIndexByTemplateId = useMemo(() => {
@@ -487,7 +492,7 @@ const Templates: React.FC = () => {
       map.set(template.id, buildTemplateSearchIndex(template));
     }
     return map;
-  }, []);
+  }, [templates]);
 
   const baseCollection = useMemo(() => {
     if (collectionMode === 'all') {
@@ -496,7 +501,7 @@ const Templates: React.FC = () => {
     return templates.filter((template) =>
       ESSENTIAL_TEMPLATE_IDS.includes(template.id as (typeof ESSENTIAL_TEMPLATE_IDS)[number]),
     );
-  }, [collectionMode]);
+  }, [collectionMode, templates]);
 
   const normalizedSearchTerm = normalizeText(searchTerm.trim());
 
@@ -1278,7 +1283,7 @@ const Templates: React.FC = () => {
         image="/assets/og/playbooks.svg"
         keywords={
           selectedTemplate
-            ? [...selectedTemplate.tags, selectedTemplate.category, selectedTemplate.priority]
+            ? [...selectedTemplate.tags, selectedTemplate.category, localizeTemplatePriority(selectedTemplate.priority, locale)]
             : isEnglish
               ? ['cybersecurity templates', 'incident response', 'policy', 'grc', 'vendor security']
               : ['templates cybersécurité', 'incident response', 'policy', 'grc', 'vendor security']
@@ -1333,10 +1338,10 @@ const Templates: React.FC = () => {
               className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-brand-steel focus:bg-white"
             >
               <option value="Tous">{copy.priorityAll}</option>
-              <option value="Critique">Critique</option>
-              <option value="Élevée">Élevée</option>
-              <option value="Moyenne">Moyenne</option>
-              <option value="Faible">Faible</option>
+              <option value="Critique">{localizeTemplatePriority('Critique', locale)}</option>
+              <option value="Élevée">{localizeTemplatePriority('Élevée', locale)}</option>
+              <option value="Moyenne">{localizeTemplatePriority('Moyenne', locale)}</option>
+              <option value="Faible">{localizeTemplatePriority('Faible', locale)}</option>
             </select>
 
             <select
@@ -1346,7 +1351,8 @@ const Templates: React.FC = () => {
             >
               {audiences.map((audience) => (
                 <option key={audience} value={audience}>
-                  {copy.audiencePrefix}: {audience === 'Tous' ? copy.all : audience}
+                  {copy.audiencePrefix}:{' '}
+                  {audience === 'Tous' ? copy.all : localizeTemplateAudience(audience, locale)}
                 </option>
               ))}
             </select>
@@ -1430,7 +1436,7 @@ const Templates: React.FC = () => {
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div className="flex flex-wrap gap-2">
                         <Badge color={getPriorityColor(template.priority)}>
-                          {template.priority}
+                          {localizeTemplatePriority(template.priority, locale)}
                         </Badge>
                         <Badge color="mono">{template.category}</Badge>
                       </div>
@@ -1447,7 +1453,7 @@ const Templates: React.FC = () => {
                     <div className="mb-4 flex flex-wrap gap-2">
                       {shownAudiences.map((audience) => (
                         <Badge key={audience} color="steel" className="normal-case">
-                          {audience}
+                          {localizeTemplateAudience(audience, locale)}
                         </Badge>
                       ))}
                       {hiddenAudienceCount > 0 && (
@@ -1515,12 +1521,12 @@ const Templates: React.FC = () => {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Badge color={getPriorityColor(selectedTemplate.priority)}>
-                    {selectedTemplate.priority}
+                    {localizeTemplatePriority(selectedTemplate.priority, locale)}
                   </Badge>
                   <Badge color="mono">{selectedTemplate.category}</Badge>
                   {selectedTemplate.audiences.map((audience) => (
                     <Badge key={audience} color="steel" className="normal-case">
-                      {audience}
+                      {localizeTemplateAudience(audience, locale)}
                     </Badge>
                   ))}
                 </div>
@@ -1763,7 +1769,7 @@ const Templates: React.FC = () => {
                                 {copy.priority}
                               </p>
                               <p className="cg-priority-value mt-1 text-2xl font-bold text-brand-navy">
-                                {selectedTemplate.priority}
+                                {localizeTemplatePriority(selectedTemplate.priority, locale)}
                               </p>
                               <p className="cg-priority-meta text-xs text-slate-600">
                                 {copy.updatedOn}: {formatDate(selectedTemplate.updatedAt, locale)}
@@ -1780,7 +1786,7 @@ const Templates: React.FC = () => {
                                 key={`doc-audience-${audience}`}
                                 className="cg-chip rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700"
                               >
-                                {audience}
+                                {localizeTemplateAudience(audience, locale)}
                               </span>
                             ))}
                             {selectedTemplate.audiences.length > 3 && (
@@ -1962,10 +1968,14 @@ const Templates: React.FC = () => {
 
                           <footer className="cg-footer">
                             <span>
-                              {selectedTemplate.id.toUpperCase()} • {selectedTemplate.category}
+                              {selectedTemplate.id.toUpperCase()} | {selectedTemplate.category}
                             </span>
                             <span>
-                              {copy.targetAudience}: {selectedTemplate.audiences.join(' / ')} •{' '}
+                              {copy.targetAudience}:{' '}
+                              {selectedTemplate.audiences
+                                .map((audience) => localizeTemplateAudience(audience, locale))
+                                .join(' / ')}{' '}
+                              |{' '}
                               {reportGeneratedAt}
                             </span>
                           </footer>
@@ -2086,3 +2096,4 @@ const Templates: React.FC = () => {
 };
 
 export default Templates;
+

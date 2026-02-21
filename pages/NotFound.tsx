@@ -24,11 +24,11 @@ const NotFound: React.FC = () => {
       : {
           title: 'Page introuvable',
           description:
-            "La page demandee est introuvable. Revenez sur les analyses ou l'accueil Cyber Guide.",
+            "La page demandée est introuvable. Revenez sur les analyses ou l'accueil Cyber Guide.",
           subtitle: 'Page introuvable',
-          meta: ['Route inconnue', 'Verifiez le lien'],
+          meta: ['Route inconnue', 'Vérifiez le lien'],
           heading: "Cette page n'existe pas",
-          body: "Le lien est invalide ou la ressource a ete deplacee. Retournez a l'accueil ou consultez les analyses disponibles.",
+          body: "Le lien est invalide ou la ressource a été déplacée. Retournez à l'accueil ou consultez les analyses disponibles.",
           backHome: 'Retour accueil',
           viewAnalyses: 'Voir les analyses',
         };

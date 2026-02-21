@@ -2,9 +2,10 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Clock, Filter, FolderOpen } from 'lucide-react';
 import { Badge, Button, type BadgeColor, ShieldHeader } from '../components/UI';
-import { analyses } from '../data';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
+import { getLocalizedContent } from '../utils/contentLocale';
+import { localizeAnalysisCategory, localizeAnalysisLevel } from '../utils/labels';
 
 type LevelStyle = {
   badgeColor: BadgeColor;
@@ -52,6 +53,7 @@ const Analyses: React.FC = () => {
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
   const isEnglish = locale === 'en';
+  const { analyses } = useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const localizedAbsolutePath = (path: string): string =>
     `https://cyber-guide.fr${buildLocalizedPath(path, locale)}`;
@@ -86,28 +88,28 @@ const Analyses: React.FC = () => {
     : {
         seoTitle: 'Analyses Cyber Defensives',
         seoDescription:
-          "Bibliotheque d'analyses en cybersécurité opérationnelle: identite, AD, ransomware, conformite et posture defensive.",
+          "Bibliothèque d'analyses en cybersécurité opérationnelle : identité, AD, ransomware, conformité et posture défensive.",
         headerTitle: "Dossiers d'Analyse",
-        headerSubtitle: 'Bibliotheque',
+        headerSubtitle: 'Bibliothèque',
         headerMetaLabel: 'Dossiers',
         threatIntel: 'Renseignement menace',
-        defensiveAnalyses: 'Analyses defensives',
+        defensiveAnalyses: 'Analyses défensives',
         filters: 'Filtres',
         searchLabel: 'RECHERCHE',
         searchPlaceholder: 'Ex: MFA, ransomware, NIS2, AD tiering',
-        category: 'CATEGORIE',
+        category: 'CATÉGORIE',
         technicalLevel: 'NIVEAU TECHNIQUE',
         all: 'Tous',
-        resultsFound: 'resultat(s) trouve(s)',
-        recommendedPath: 'Parcours recommande',
+        resultsFound: 'résultat(s) trouvé(s)',
+        recommendedPath: 'Parcours recommandé',
         recommendedDescription:
-          'Pour chaque analyse, un guide pilier donne la vision long terme et les templates fournissent les actions immediates.',
+          'Pour chaque analyse, un guide pilier donne la vision long terme et les templates fournissent les actions immédiates.',
         openGuides: 'Ouvrir les guides',
         seeTemplates: 'Voir aussi les templates',
-        keyMetric: 'Chiffre cle',
+        keyMetric: 'Chiffre clé',
         consult: 'Consulter',
-        noResult: 'Aucune analyse ne correspond a vos filtres.',
-        resetFilters: 'Reinitialiser les filtres',
+        noResult: 'Aucune analyse ne correspond à vos filtres.',
+        resetFilters: 'Réinitialiser les filtres',
       };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,11 +119,11 @@ const Analyses: React.FC = () => {
 
   const categories = useMemo(
     () => [ALL_FILTER_VALUE, ...Array.from(new Set(analyses.map((item) => item.category)))],
-    [],
+    [analyses],
   );
   const levels = useMemo(
     () => [ALL_FILTER_VALUE, ...Array.from(new Set(analyses.map((item) => item.level)))],
-    [],
+    [analyses],
   );
 
   const filteredAnalyses = analyses.filter((analysis) => {
@@ -167,7 +169,7 @@ const Analyses: React.FC = () => {
             : [
                 'analyse cyber',
                 'threat intelligence',
-                'cybersecurite operationnelle',
+                'cybersécurité opérationnelle',
                 'ransomware',
                 'active directory',
               ]
@@ -236,7 +238,7 @@ const Analyses: React.FC = () => {
                         : 'border-slate-200 bg-white text-slate-500 hover:border-brand-steel hover:text-brand-navy'
                     }`}
                   >
-                    {category === ALL_FILTER_VALUE ? copy.all : category}
+                    {category === ALL_FILTER_VALUE ? copy.all : localizeAnalysisCategory(category, locale)}
                   </button>
                 ))}
               </div>
@@ -256,7 +258,7 @@ const Analyses: React.FC = () => {
                         : 'border-slate-200 bg-white text-slate-500 hover:border-brand-steel hover:text-brand-navy'
                     }`}
                   >
-                    {level === ALL_FILTER_VALUE ? copy.all : level}
+                    {level === ALL_FILTER_VALUE ? copy.all : localizeAnalysisLevel(level, locale)}
                   </button>
                 ))}
               </div>
@@ -306,12 +308,12 @@ const Analyses: React.FC = () => {
                   <div className="flex flex-grow flex-col p-6">
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <Badge color="mono" className="text-[9px]">
-                        {analysis.category}
+                        {localizeAnalysisCategory(analysis.category, locale)}
                       </Badge>
                       <span
                         className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase ${levelStyle.pillClass}`}
                       >
-                        {analysis.level}
+                        {localizeAnalysisLevel(analysis.level, locale)}
                       </span>
                     </div>
 

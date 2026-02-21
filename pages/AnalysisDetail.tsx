@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import { useParams, Navigate, Link, useLocation } from 'react-router-dom';
 import { Badge, TechSeparator, Button, type BadgeColor } from '../components/UI';
-import { analyses, playbooks } from '../data';
+import { getLocalizedContent } from '../utils/contentLocale';
 import {
   CheckCircle,
   ArrowLeft,
@@ -13,12 +13,72 @@ import {
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
+import {
+  localizeAnalysisCategory,
+  localizeAnalysisLevel,
+  localizePlaybookCategory,
+  localizePlaybookSeverity,
+} from '../utils/labels';
 
 const AnalysisDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const { analyses, playbooks } = React.useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const copy = isEnglish
+    ? {
+        breadcrumbHome: 'Home',
+        backToLibrary: 'Back to library',
+        published: 'Published',
+        updated: 'Updated',
+        summary: 'Summary',
+        keyFigures: 'Key figures',
+        context: 'Context',
+        attackChain: 'Attack chain',
+        detections: 'Detections',
+        remediation: 'Remediation',
+        source: 'Source',
+        prioritizedIocs: 'Priority IOCs',
+        indicator: 'Indicator',
+        prioritizedRemediation: 'Prioritized remediation',
+        limits: 'Limits',
+        watchSignals: 'Signals to watch',
+        quickDiagnosis: 'Quick diagnosis',
+        contactTeam: 'Contact team',
+        opsChecklist: 'Ops checklist',
+        linkedPlaybooks: 'Linked playbooks',
+        linkedGuide: 'Related pillar guide',
+        linkedGuideBody: 'Follow the long-format path to structure a complete defensive plan.',
+        openGuide: 'Open guide',
+        reportKeyPages: 'REPORT KEY PAGES',
+      }
+    : {
+        breadcrumbHome: 'Accueil',
+        backToLibrary: 'Retour à la bibliothèque',
+        published: 'Publié',
+        updated: 'MàJ',
+        summary: 'Sommaire',
+        keyFigures: 'Chiffres clés',
+        context: 'Contexte',
+        attackChain: "Chaîne d'attaque",
+        detections: 'Détections',
+        remediation: 'Remédiation',
+        source: 'Source',
+        prioritizedIocs: 'IOCs prioritaires',
+        indicator: 'Indicateur',
+        prioritizedRemediation: 'Remédiation priorisée',
+        limits: 'Limites',
+        watchSignals: 'Signaux à surveiller',
+        quickDiagnosis: 'Diagnostic rapide',
+        contactTeam: "Contacter l'équipe",
+        linkedPlaybooks: 'Playbooks liés',
+        linkedGuide: 'Guide pilier associé',
+        linkedGuideBody: 'Suivez le parcours long format pour structurer un plan défensif complet.',
+        openGuide: 'Ouvrir le guide',
+        reportKeyPages: 'PAGES CLÉS DU RAPPORT',
+      };
   const analysis = analyses.find((a) => a.slug === slug);
 
   if (!analysis) {
@@ -56,7 +116,11 @@ const AnalysisDetail: React.FC = () => {
         image={analysis.ogImage}
         publishedTime={analysis.publishedDate}
         modifiedTime={analysis.updatedDate ?? analysis.publishedDate}
-        keywords={[...analysis.tags, analysis.category, analysis.level]}
+        keywords={[
+          ...analysis.tags,
+          localizeAnalysisCategory(analysis.category, locale),
+          localizeAnalysisLevel(analysis.level, locale),
+        ]}
         schema={[
           {
             '@context': 'https://schema.org',
@@ -65,7 +129,7 @@ const AnalysisDetail: React.FC = () => {
               {
                 '@type': 'ListItem',
                 position: 1,
-                name: 'Accueil',
+                name: copy.breadcrumbHome,
                 item: 'https://cyber-guide.fr/',
               },
               {
@@ -104,14 +168,14 @@ const AnalysisDetail: React.FC = () => {
             to={localizedPath('/analyses')}
             className="inline-flex items-center text-brand-light/70 hover:text-white text-xs font-mono uppercase tracking-widest mb-6 transition-colors"
           >
-            <ArrowLeft size={14} className="mr-2" /> Retour à la bibliothèque
+            <ArrowLeft size={14} className="mr-2" /> {copy.backToLibrary}
           </Link>
           <div className="flex flex-wrap gap-3 mb-4">
             <Badge color="steel" className="bg-white/10 text-white border-white/20">
-              {analysis.category}
+              {localizeAnalysisCategory(analysis.category, locale)}
             </Badge>
             <span className="text-brand-light font-mono text-xs py-1">
-              Publie : {analysis.publishedDate} | Maj :{' '}
+              {copy.published}: {analysis.publishedDate} | {copy.updated}:{' '}
               {analysis.updatedDate ?? analysis.publishedDate}
             </span>
           </div>
@@ -129,17 +193,17 @@ const AnalysisDetail: React.FC = () => {
             <div className="sticky top-28 space-y-4">
               <div className="bg-white p-4 shadow-sm border border-slate-200 rounded-sm">
                 <h4 className="font-bold text-brand-navy uppercase text-xs tracking-widest mb-4 border-b border-slate-100 pb-2">
-                  Sommaire
+                  {copy.summary}
                 </h4>
                 <ul className="space-y-3 text-sm text-slate-600">
                   <li>
                     <a href="#kpis" className="hover:text-brand-steel flex items-center gap-2">
-                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> Chiffres cles
+                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> {copy.keyFigures}
                     </a>
                   </li>
                   <li>
                     <a href="#contexte" className="hover:text-brand-steel flex items-center gap-2">
-                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> Contexte
+                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> {copy.context}
                     </a>
                   </li>
                   <li>
@@ -147,7 +211,7 @@ const AnalysisDetail: React.FC = () => {
                       href="#attack-chain"
                       className="hover:text-brand-steel flex items-center gap-2"
                     >
-                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> Chaine attaque
+                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> {copy.attackChain}
                     </a>
                   </li>
                   <li>
@@ -160,7 +224,7 @@ const AnalysisDetail: React.FC = () => {
                       href="#detections"
                       className="hover:text-brand-steel flex items-center gap-2"
                     >
-                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> Detections
+                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> {copy.detections}
                     </a>
                   </li>
                   <li>
@@ -168,7 +232,7 @@ const AnalysisDetail: React.FC = () => {
                       href="#remediation"
                       className="hover:text-brand-steel flex items-center gap-2"
                     >
-                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> Remediation
+                      <div className="w-1 h-1 bg-slate-400 rounded-full"></div> {copy.remediation}
                     </a>
                   </li>
                 </ul>
@@ -181,7 +245,7 @@ const AnalysisDetail: React.FC = () => {
             {/* 1. KPI */}
             <section id="kpis">
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-6 flex items-center gap-3">
-                <BarChart3 className="text-brand-steel" /> Chiffres cles
+                <BarChart3 className="text-brand-steel" /> {copy.keyFigures}
               </h2>
               <div className="grid md:grid-cols-2 gap-4">
                 {analysis.keyMetrics.map((metric) => (
@@ -200,7 +264,7 @@ const AnalysisDetail: React.FC = () => {
                     )}
                     <p className="mt-3 text-sm text-slate-700 leading-relaxed">{metric.insight}</p>
                     <p className="mt-3 text-[10px] font-mono uppercase tracking-wide text-slate-400">
-                      Source: {metric.source}
+                      {copy.source}: {metric.source}
                     </p>
                   </div>
                 ))}
@@ -214,14 +278,14 @@ const AnalysisDetail: React.FC = () => {
               className="rounded-sm border border-slate-200 bg-white p-6 shadow-sm"
             >
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-4 flex items-center gap-3">
-                <Activity className="text-brand-steel" /> Contexte
+                <Activity className="text-brand-steel" /> {copy.context}
               </h2>
               <p className="text-slate-700 leading-relaxed">{analysis.expertFormat.context}</p>
             </section>
 
             <section id="attack-chain">
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-6 flex items-center gap-3">
-                <ArrowRight className="text-brand-steel" /> Chaine d attaque
+                <ArrowRight className="text-brand-steel" /> {copy.attackChain}
               </h2>
               <div className="space-y-3">
                 {analysis.expertFormat.attackChain.map((step, i) => (
@@ -260,7 +324,7 @@ const AnalysisDetail: React.FC = () => {
 
             <section id="iocs">
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-6 flex items-center gap-3">
-                <AlertTriangle className="text-brand-steel" /> IOCs prioritaires
+                <AlertTriangle className="text-brand-steel" /> {copy.prioritizedIocs}
               </h2>
               <div className="space-y-3">
                 {analysis.expertFormat.iocs.map((ioc, i) => (
@@ -271,7 +335,7 @@ const AnalysisDetail: React.FC = () => {
                     <div className="mb-2 flex items-center gap-2">
                       <Badge color="mono">{ioc.type}</Badge>
                       <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">
-                        Indicator
+                        {copy.indicator}
                       </span>
                     </div>
                     <p className="font-mono text-xs text-brand-navy break-all">{ioc.value}</p>
@@ -283,7 +347,7 @@ const AnalysisDetail: React.FC = () => {
 
             <section id="detections">
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-6 flex items-center gap-3">
-                <BarChart3 className="text-brand-steel" /> Detections (Sigma / KQL)
+                <BarChart3 className="text-brand-steel" /> {copy.detections} (Sigma / KQL)
               </h2>
               <div className="space-y-4">
                 {analysis.expertFormat.detections.map((detection, i) => (
@@ -310,7 +374,7 @@ const AnalysisDetail: React.FC = () => {
 
             <section id="remediation">
               <h2 className="text-2xl font-display font-bold text-brand-navy mb-6">
-                Remediation priorisee
+                {copy.prioritizedRemediation}
               </h2>
               <div className="space-y-3">
                 {analysis.expertFormat.remediation.map((item, i) => (
@@ -328,7 +392,7 @@ const AnalysisDetail: React.FC = () => {
             </section>
 
             <section id="limites" className="rounded-sm border border-slate-200 bg-slate-50 p-6">
-              <h2 className="text-xl font-display font-bold text-brand-navy mb-4">Limites</h2>
+              <h2 className="text-xl font-display font-bold text-brand-navy mb-4">{copy.limits}</h2>
               <ul className="space-y-3">
                 {analysis.expertFormat.limits.map((limit, i) => (
                   <li
@@ -348,7 +412,7 @@ const AnalysisDetail: React.FC = () => {
             {analysis.threatSignals.length > 0 && (
               <div className="bg-white border border-slate-200 p-6 rounded-sm shadow-sm">
                 <h3 className="font-display font-bold text-brand-navy mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
-                  <Activity size={16} className="text-brand-steel" /> Signaux a surveiller
+                  <Activity size={16} className="text-brand-steel" /> {copy.watchSignals}
                 </h3>
                 <ul className="space-y-3">
                   {analysis.threatSignals.map((signal, i) => (
@@ -364,7 +428,7 @@ const AnalysisDetail: React.FC = () => {
             {/* DIAGNOSTIC */}
             <div className="bg-brand-navy text-white p-6 rounded-sm shadow-lg">
               <h3 className="font-display font-bold mb-4 text-sm uppercase tracking-wider">
-                Diagnostic Rapide
+                {copy.quickDiagnosis}
               </h3>
               <ul className="space-y-4 mb-6">
                 {analysis.discoveryQuestions.slice(0, 3).map((q, i) => (
@@ -378,7 +442,7 @@ const AnalysisDetail: React.FC = () => {
               </ul>
               <Link to={localizedPath('/contact')}>
                 <Button as="span" variant="tech" className="w-full justify-center">
-                  Contacter l'équipe
+                  {copy.contactTeam}
                 </Button>
               </Link>
             </div>
@@ -386,7 +450,7 @@ const AnalysisDetail: React.FC = () => {
             {/* CHECKLIST */}
             <div className="bg-white border border-slate-200 p-6 rounded-sm shadow-sm">
               <h3 className="font-display font-bold text-brand-navy mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
-                <ListChecks size={16} /> Checklist Ops
+                <ListChecks size={16} /> {copy.opsChecklist}
               </h3>
               <ul className="space-y-3">
                 {analysis.checklist.map((item, i) => (
@@ -401,7 +465,7 @@ const AnalysisDetail: React.FC = () => {
             {linkedPlaybooks.length > 0 && (
               <div className="bg-white border border-slate-200 p-6 rounded-sm shadow-sm">
                 <h3 className="font-display font-bold text-brand-navy mb-4 text-sm uppercase tracking-wider">
-                  Playbooks lies
+                  {copy.linkedPlaybooks}
                 </h3>
                 <div className="space-y-3">
                   {linkedPlaybooks.map((playbook) => (
@@ -413,11 +477,13 @@ const AnalysisDetail: React.FC = () => {
                       <div className="flex items-start justify-between gap-2">
                         <span className="font-medium">{playbook.title}</span>
                         <Badge color={getPlaybookSeverityColor(playbook.severity)}>
-                          {playbook.severity}
+                          {localizePlaybookSeverity(playbook.severity, locale)}
                         </Badge>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <Badge color="mono">{playbook.category}</Badge>
+                        <Badge color="mono">
+                          {localizePlaybookCategory(playbook.category, locale)}
+                        </Badge>
                         <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wide">
                           {playbook.id}
                         </span>
@@ -430,23 +496,23 @@ const AnalysisDetail: React.FC = () => {
 
             <div className="bg-brand-pale/30 border border-brand-steel/20 p-6 rounded-sm shadow-sm">
               <h3 className="font-display font-bold text-brand-navy mb-2 text-sm uppercase tracking-wider">
-                Guide pilier associe
+                {copy.linkedGuide}
               </h3>
               <p className="text-sm text-slate-600 mb-4">
-                Suivez le parcours long format pour structurer un plan defensif complet.
+                {copy.linkedGuideBody}
               </p>
               <Link
                 to={localizedPath(`/guides/${relatedGuideSlug}`)}
                 className="inline-flex items-center text-xs font-bold uppercase tracking-wide text-brand-steel hover:text-brand-navy"
               >
-                Ouvrir le guide <ArrowRight size={14} className="ml-1" />
+                {copy.openGuide} <ArrowRight size={14} className="ml-1" />
               </Link>
             </div>
 
             {/* PAGES REF */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-sm text-center">
               <span className="text-xs text-slate-400 font-mono block mb-2">
-                PAGES CLÉS DU RAPPORT
+                {copy.reportKeyPages}
               </span>
               <div className="flex flex-wrap justify-center gap-2">
                 {analysis.navigatorPages.map((page) => (

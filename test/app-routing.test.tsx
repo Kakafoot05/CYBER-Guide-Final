@@ -5,6 +5,7 @@ import App from '../App';
 
 describe('App routing', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     window.history.replaceState({}, '', '/');
   });
 
@@ -61,5 +62,38 @@ describe('App routing', () => {
     );
 
     expect(await screen.findByText(/Procedures & Playbooks/i)).toBeTruthy();
+  });
+
+  it('redirects english playbooks route to templates', async () => {
+    window.history.replaceState({}, '', '/en/playbooks');
+    render(
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>,
+    );
+
+    expect(await screen.findByText(/Enterprise Ops/i)).toBeTruthy();
+  });
+
+  it('renders projects page for english canonical route', async () => {
+    window.history.replaceState({}, '', '/en/projects');
+    render(
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>,
+    );
+
+    expect(await screen.findByText(/Projects & Operations/i)).toBeTruthy();
+  });
+
+  it('redirects legacy english french slug for projects', async () => {
+    window.history.replaceState({}, '', '/en/projets');
+    render(
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>,
+    );
+
+    expect(await screen.findByText(/Projects & Operations/i)).toBeTruthy();
   });
 });

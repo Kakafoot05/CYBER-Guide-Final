@@ -44,32 +44,36 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           sources: 'Sources & Frameworks',
           viewDetails: 'View details',
           strictDefensive: 'STRICTLY DEFENSIVE // OPERATIONAL CYBERSECURITY',
-          journal: 'Journal',
           languageSwitcherAria: 'Change language',
+          menuAria: 'Main menu',
+          sourceAnssiTag: 'French framework',
+          sourceNistTag: 'CSF framework',
         }
       : {
           skipToContent: 'Aller au contenu',
-          logoAriaLabel: 'Retour Accueil',
+          logoAriaLabel: "Retour à l'accueil",
           nav: {
             analyses: 'Analyses',
             guides: 'Guides',
             projects: 'Projets',
             tools: 'Outils',
             templates: 'Templates',
-            about: 'A Propos',
+            about: 'À Propos',
           },
-          edition: 'Edition 2026',
+          edition: 'Édition 2026',
           contact: 'Contact',
           mission: 'Mission',
           missionDescription:
-            "Plateforme d'analyse et d'outillage defensif pour les equipes cyber operationnelles. Priorite: parcours actionnables, standards fiables et execution en conditions reelles.",
+            "Plateforme d'analyse et d'outillage défensif pour les équipes cyber opérationnelles. Priorité: parcours actionnables, standards fiables et exécution en conditions réelles.",
           copyright: '© 2026 CYBER GUIDE.',
           navigation: 'Navigation',
-          sources: 'Sources & Referentiels',
-          viewDetails: 'Voir details',
-          strictDefensive: 'STRICTEMENT DEFENSIF // CYBER OPERATIONNELLE',
-          journal: 'Journal',
+          sources: 'Sources & Référentiels',
+          viewDetails: 'Voir détails',
+          strictDefensive: 'STRICTEMENT DÉFENSIF // CYBER OPÉRATIONNELLE',
           languageSwitcherAria: 'Changer de langue',
+          menuAria: 'Menu principal',
+          sourceAnssiTag: 'Référentiel FR',
+          sourceNistTag: 'Framework CSF',
         };
 
   useEffect(() => {
@@ -175,7 +179,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   width={888}
                   height={290}
                   loading="eager"
-                  fetchPriority="high"
                   decoding="async"
                 />
               </div>
@@ -249,7 +252,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               type="button"
               className="md:hidden text-white p-2 hover:bg-white/10 rounded-md transition-colors"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Menu"
+              aria-label={copy.menuAria}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-main-menu"
             >
@@ -382,7 +385,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       to={localizedPath('/sources')}
                       className="hover:text-brand-gold transition-colors block py-1"
                     >
-                      Sources
+                      {copy.sources}
                     </Link>
                   </li>
                   <li>
@@ -447,7 +450,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="text-xs font-bold text-white group-hover:text-brand-gold transition-colors">
                       ANSSI
                     </div>
-                    <div className="text-[9px] text-slate-500 font-mono mt-1">Referentiel FR</div>
+                    <div className="text-[9px] text-slate-500 font-mono mt-1">
+                      {copy.sourceAnssiTag}
+                    </div>
                   </div>
                 </a>
 
@@ -473,7 +478,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="text-xs font-bold text-white group-hover:text-brand-gold transition-colors">
                       NIST
                     </div>
-                    <div className="text-[9px] text-slate-500 font-mono mt-1">Framework CSF</div>
+                    <div className="text-[9px] text-slate-500 font-mono mt-1">
+                      {copy.sourceNistTag}
+                    </div>
                   </div>
                 </a>
               </div>
@@ -485,12 +492,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <ShieldCheck size={14} /> {copy.strictDefensive}
             </div>
             <div className="flex items-center gap-6">
-              <Link
-                to={localizedPath('/blog')}
-                className="text-xs font-mono uppercase tracking-wide text-slate-500 hover:text-white transition-colors"
-              >
-                {copy.journal}
-              </Link>
               <Link
                 to={localizedPath('/contact')}
                 className="text-xs font-mono uppercase tracking-wide text-slate-500 hover:text-white transition-colors"

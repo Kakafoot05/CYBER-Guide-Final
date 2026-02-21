@@ -32,7 +32,7 @@ const Contact: React.FC = () => {
         message: 'Message',
         messagePlaceholder: 'Your detailed message (min. 30 characters)...',
         subjectPlaceholder: 'Select a subject...',
-        subjectDemo: 'Demo request / Tooling',
+        subjectTooling: 'Tooling and onboarding request',
         subjectAnalysis: 'Question about an analysis',
         subjectBug: 'Issue report',
         subjectOther: 'Other request',
@@ -56,7 +56,7 @@ const Contact: React.FC = () => {
     : {
         seoTitle: 'Contact Cyber Guide',
         seoDescription:
-          'Contactez Cyber Guide pour une question sur les analyses, templates ou outils defensifs.',
+          'Contactez Cyber Guide pour une question sur les analyses, templates ou outils défensifs.',
         headerSubtitle: 'Communication',
         sectionTitle: 'Nous contacter',
         sectionBody:
@@ -71,7 +71,7 @@ const Contact: React.FC = () => {
         message: 'Message',
         messagePlaceholder: 'Votre message détaillé (min. 30 caractères)...',
         subjectPlaceholder: 'Sélectionner un sujet...',
-        subjectDemo: 'Demande de démo / Outils',
+        subjectTooling: "Demande d'accompagnement outils",
         subjectAnalysis: 'Question sur une analyse',
         subjectBug: "Signalement d'erreur",
         subjectOther: 'Autre demande',
@@ -253,7 +253,7 @@ const Contact: React.FC = () => {
         keywords={
           isEnglish
             ? ['cyber contact', 'operational cybersecurity', 'cyber guide support']
-            : ['contact cyber', 'cybersecurite operationnelle', 'support cyber guide']
+            : ['contact cyber', 'cybersécurité opérationnelle', 'support cyber guide']
         }
         schema={{
           '@context': 'https://schema.org',
@@ -371,7 +371,7 @@ const Contact: React.FC = () => {
                         required
                       >
                         <option value="">{copy.subjectPlaceholder}</option>
-                        <option value={copy.subjectDemo}>{copy.subjectDemo}</option>
+                        <option value={copy.subjectTooling}>{copy.subjectTooling}</option>
                         <option value={copy.subjectAnalysis}>{copy.subjectAnalysis}</option>
                         <option value={copy.subjectBug}>{copy.subjectBug}</option>
                         <option value={copy.subjectOther}>{copy.subjectOther}</option>

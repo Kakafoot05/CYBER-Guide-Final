@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import {
   BrowserRouter,
   HashRouter,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -28,8 +29,6 @@ const Contact = React.lazy(() => import('./pages/Contact'));
 const Templates = React.lazy(() => import('./pages/Templates'));
 const Playbooks = React.lazy(() => import('./pages/Playbooks'));
 const Sources = React.lazy(() => import('./pages/Sources'));
-const Blog = React.lazy(() => import('./pages/Blog'));
-const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // ScrollToTop component to fix scroll position on route change
@@ -72,13 +71,18 @@ const LocaleSync: React.FC = () => {
   return null;
 };
 
-const RouteLoading: React.FC = () => (
-  <div className="flex min-h-[50vh] items-center justify-center">
-    <div className="rounded-sm border border-slate-200 bg-white px-4 py-2 text-xs font-mono uppercase tracking-wider text-slate-500">
-      Chargement...
+const RouteLoading: React.FC = () => {
+  const { pathname } = useLocation();
+  const isEnglish = getLocaleFromPathname(pathname) === 'en';
+
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="rounded-sm border border-slate-200 bg-white px-4 py-2 text-xs font-mono uppercase tracking-wider text-slate-500">
+        {isEnglish ? 'Loading...' : 'Chargement...'}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AppRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const useHashRouter = import.meta.env.VITE_USE_HASH_ROUTER === 'true';
@@ -107,22 +111,15 @@ const App: React.FC = () => {
     { path: '/a-propos', element: <About /> },
     { path: '/sources', element: <Sources /> },
     { path: '/contact', element: <Contact /> },
-    { path: '/blog', element: <Blog /> },
-    { path: '/blog/:slug', element: <BlogDetail /> },
   ];
 
-  const renderLocalizedRoutes = (localePrefix: '' | '/en') =>
+  const renderLocalizedRoutes = (locale: 'fr' | 'en') =>
     routeDefinitions.map((routeDefinition) => {
-      const localizedPath =
-        localePrefix === ''
-          ? routeDefinition.path
-          : routeDefinition.path === '/'
-            ? '/en'
-            : `/en${routeDefinition.path}`;
+      const localizedPath = buildLocalizedPath(routeDefinition.path, locale);
 
       return (
         <Route
-          key={`${localePrefix || 'fr'}-${routeDefinition.path}`}
+          key={`${locale}-${routeDefinition.path}`}
           path={localizedPath}
           element={routeDefinition.element}
         />
@@ -136,8 +133,17 @@ const App: React.FC = () => {
       <Layout>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-            {renderLocalizedRoutes('')}
-            {renderLocalizedRoutes('/en')}
+            <Route path="/en/playbooks" element={<Navigate to="/en/templates" replace />} />
+            <Route path="/en/playbooks/:id" element={<Navigate to="/en/templates" replace />} />
+            <Route path="/en/projets" element={<Navigate to="/en/projects" replace />} />
+            <Route path="/en/outils" element={<Navigate to="/en/tools" replace />} />
+            <Route path="/en/a-propos" element={<Navigate to="/en/about" replace />} />
+            <Route path="/blog" element={<Navigate to="/analyses" replace />} />
+            <Route path="/blog/:slug" element={<Navigate to="/analyses" replace />} />
+            <Route path="/en/blog" element={<Navigate to="/en/analyses" replace />} />
+            <Route path="/en/blog/:slug" element={<Navigate to="/en/analyses" replace />} />
+            {renderLocalizedRoutes('fr')}
+            {renderLocalizedRoutes('en')}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

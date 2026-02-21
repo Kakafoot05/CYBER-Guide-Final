@@ -1,12 +1,20 @@
 ﻿import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, BarChart3, Lock, FileText, BookOpen, Network, Activity } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Lock,
+  FileText,
+  BookOpen,
+  Network,
+  Activity,
+  AlertTriangle,
+} from 'lucide-react';
 import { Button, BlueprintPanel, Badge, TechSeparator } from '../components/UI';
 import { Reveal, StaggerContainer, StaggerItem } from '../components/Motion';
 import { Seo } from '../components/Seo';
-import { guides } from '../guides';
-import { softwares } from '../data';
 import { buildLocalizedPath, getLocaleFromPathname, type SupportedLocale } from '../utils/locale';
+import { getLocalizedContent } from '../utils/contentLocale';
 
 type ThreatFocus = {
   cve: string;
@@ -274,8 +282,6 @@ const THREAT_FOCUS_CALENDAR: ThreatFocus[] = [
   },
 ];
 
-type PrioritizationKey = keyof ThreatFocus['radar'];
-
 type RiskBand = {
   label: string;
   actionWindow: string;
@@ -285,6 +291,18 @@ type RiskBand = {
 type RiskDriver = {
   label: string;
   value: number;
+};
+
+type QuickResponsePlan = {
+  id: string;
+  label: string;
+  title: string;
+  trigger: string;
+  firstFive: string[];
+  nextTen: string[];
+  escalation: string[];
+  templateId: string;
+  analysisSlug: string;
 };
 
 const COST_FACTOR_BY_SEVERITY: Record<ThreatFocus['severity'], number> = {
@@ -363,18 +381,18 @@ const buildTopRiskDrivers = (focus: ThreatFocus, locale: SupportedLocale): RiskD
   const isEnglish = locale === 'en';
   const drivers: Array<{ label: string; value: number }> = [
     { label: isEnglish ? 'Internet exposure' : 'Exposition internet', value: focus.radar.surface },
-    { label: isEnglish ? 'Exploitability' : 'Exploitabilite', value: focus.radar.exploitability },
-    { label: isEnglish ? 'Business impact' : 'Impact metier', value: focus.radar.impact },
+    { label: isEnglish ? 'Exploitability' : 'Exploitabilité', value: focus.radar.exploitability },
+    { label: isEnglish ? 'Business impact' : 'Impact métier', value: focus.radar.impact },
     {
       label: isEnglish ? 'Patch urgency' : 'Urgence de correction',
       value: focus.radar.patchPriority,
     },
     {
-      label: isEnglish ? 'Detection coverage gap' : 'Couverture detection insuffisante',
+      label: isEnglish ? 'Detection coverage gap' : 'Couverture détection insuffisante',
       value: 100 - focus.radar.detection,
     },
     {
-      label: isEnglish ? 'Remediation readiness gap' : 'Preparation remediation insuffisante',
+      label: isEnglish ? 'Remediation readiness gap' : 'Préparation à la remédiation insuffisante',
       value: 100 - focus.radar.remediationReadiness,
     },
   ];
@@ -398,15 +416,214 @@ const getSeverityLabel = (severity: ThreatFocus['severity'], locale: SupportedLo
   return severity.toUpperCase();
 };
 
+const getQuickResponsePlans = (locale: SupportedLocale): QuickResponsePlan[] => {
+  if (locale === 'en') {
+    return [
+      {
+        id: 'phishing',
+        label: 'Phishing',
+        title: 'Compromised mailbox (BEC / phishing)',
+        trigger: 'Suspicious login, forwarding rules, or malicious reply observed.',
+        firstFive: [
+          'Block active session and force password reset + MFA re-enrollment.',
+          'Collect mailbox headers, recent sign-ins, and suspicious rules.',
+          'Freeze deletion actions to preserve investigation evidence.',
+        ],
+        nextTen: [
+          'Purge malicious emails and block sender/domain/URL.',
+          'Check lateral impact on shared mailboxes and admins.',
+          'Launch internal communication with clear user instructions.',
+        ],
+        escalation: [
+          'Escalate to SOC lead if privileged accounts are impacted.',
+          'Notify legal/compliance if personal data exposure is suspected.',
+        ],
+        templateId: 'tpl-001',
+        analysisSlug: 'identite-mfa-fatigue',
+      },
+      {
+        id: 'ransomware',
+        label: 'Ransomware',
+        title: 'Ransomware suspicion on endpoint/server',
+        trigger: 'Mass encryption signs, ransom note, or backup tampering alerts.',
+        firstFive: [
+          'Isolate impacted hosts from network immediately.',
+          'Disable compromised accounts and high-risk admin tokens.',
+          'Preserve volatile data and timeline evidence before rebuild.',
+        ],
+        nextTen: [
+          'Validate backup integrity and define clean recovery scope.',
+          'Search for initial access vector and persistence mechanisms.',
+          'Activate business continuity communication cadence.',
+        ],
+        escalation: [
+          'Escalate to crisis committee if critical services are down.',
+          'Engage external IR partner if AD/Tier-0 compromise is suspected.',
+        ],
+        templateId: 'tpl-013',
+        analysisSlug: 'ransomware-readiness',
+      },
+      {
+        id: 'secrets',
+        label: 'Secrets leak',
+        title: 'Exposed token/API key in code or CI logs',
+        trigger: 'Secret detected in repository, pipeline artifact, or ticket.',
+        firstFive: [
+          'Revoke leaked credential immediately and rotate dependent secrets.',
+          'Identify all systems and workflows using this credential.',
+          'Capture exposure scope (repo, branch, logs, artifacts).',
+        ],
+        nextTen: [
+          'Deploy temporary detections for suspicious token usage.',
+          'Harden CI/CD secret handling and masking rules.',
+          'Document business impact and residual risk for leadership.',
+        ],
+        escalation: [
+          'Escalate if production cloud/admin scope was exposed.',
+          'Trigger legal review when customer data access is possible.',
+        ],
+        templateId: 'tpl-002',
+        analysisSlug: 'cicd-secrets-exposition',
+      },
+      {
+        id: 'edge-vuln',
+        label: 'Critical CVE',
+        title: 'Critical edge vulnerability on internet-facing service',
+        trigger: 'Vendor advisory + exploitable CVE on exposed perimeter asset.',
+        firstFive: [
+          'Confirm exposed asset inventory and vulnerable versions.',
+          'Apply emergency change controls and restrict management access.',
+          'Collect current indicators from edge logs and IAM events.',
+        ],
+        nextTen: [
+          'Patch/hotfix and validate service integrity post-change.',
+          'Review admin account creation and abnormal sessions.',
+          'Share executive SITREP with patch completion status.',
+        ],
+        escalation: [
+          'Escalate to CISO/management if patch cannot be applied within SLA.',
+          'Activate external communication workflow when customer risk is plausible.',
+        ],
+        templateId: 'tpl-004',
+        analysisSlug: 'vulnerabilites-edge-priorisation',
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'phishing',
+      label: 'Phishing',
+      title: 'Compte mail compromis (BEC / phishing)',
+      trigger: 'Connexion suspecte, règle de transfert ou réponse malveillante observée.',
+      firstFive: [
+        'Bloquer la session active et forcer reset mot de passe + réenrôlement MFA.',
+        'Collecter en-têtes mails, connexions récentes et règles suspectes.',
+        "Geler les suppressions pour préserver les preuves d'investigation.",
+      ],
+      nextTen: [
+        'Purger les mails malveillants et bloquer expéditeur/domaine/URL.',
+        'Vérifier impact latéral sur boîtes partagées et comptes admins.',
+        'Lancer une communication interne avec consignes utilisateurs claires.',
+      ],
+      escalation: [
+        'Escalader au lead SOC si comptes à privilèges touchés.',
+        'Alerter juridique/conformité si exposition de données personnelles probable.',
+      ],
+      templateId: 'tpl-001',
+      analysisSlug: 'identite-mfa-fatigue',
+    },
+    {
+      id: 'ransomware',
+      label: 'Ransomware',
+      title: 'Suspicion ransomware sur poste/serveur',
+      trigger:
+        'Signes de chiffrement massif, note de rançon ou alertes de sabotage sauvegarde.',
+      firstFive: [
+        'Isoler immédiatement les hôtes impactés du réseau.',
+        'Désactiver les comptes compromis et tokens admin à risque.',
+        'Préserver données volatiles et timeline avant reconstruction.',
+      ],
+      nextTen: [
+        'Valider intégrité des sauvegardes et définir périmètre de reprise propre.',
+        "Identifier le vecteur d'accès initial et les mécanismes de persistance.",
+        'Activer la cadence de communication de continuité métier.',
+      ],
+      escalation: [
+        'Escalader en cellule de crise si services critiques indisponibles.',
+        'Activer prestataire IR externe si suspicion compromission AD/Tier-0.',
+      ],
+      templateId: 'tpl-013',
+      analysisSlug: 'ransomware-readiness',
+    },
+    {
+      id: 'secrets',
+      label: 'Fuite secrets',
+      title: 'Token/clé API exposé dans code ou logs CI',
+      trigger: "Secret détecté dans repository, artefact pipeline ou ticket d'incident.",
+      firstFive: [
+        'Révoquer immédiatement le secret exposé et pivoter les dépendances.',
+        'Identifier tous les systèmes et workflows qui utilisent ce secret.',
+        "Capturer le périmètre d'exposition (repo, branche, logs, artefacts).",
+      ],
+      nextTen: [
+        "Déployer des détections temporaires d'usage anormal du token.",
+        'Renforcer les règles CI/CD de gestion et masquage des secrets.',
+        'Documenter impact métier et risque résiduel pour la direction.',
+      ],
+      escalation: [
+        'Escalader si exposition sur périmètre production/cloud admin.',
+        'Déclencher revue juridique si accès possible à des données client.',
+      ],
+      templateId: 'tpl-002',
+      analysisSlug: 'cicd-secrets-exposition',
+    },
+    {
+      id: 'edge-vuln',
+      label: 'CVE critique',
+      title: 'Vulnérabilité critique edge sur service exposé',
+      trigger: 'Alerte éditeur + CVE exploitable sur actif périmétrique Internet.',
+      firstFive: [
+        'Confirmer inventaire des actifs exposés et versions vulnérables.',
+        "Appliquer changement d'urgence et restreindre accès d'administration.",
+        'Collecter les indicateurs actuels dans logs edge et événements IAM.',
+      ],
+      nextTen: [
+        'Déployer correctif/hotfix puis valider intégrité du service.',
+        'Contrôler création de comptes admin et sessions anormales.',
+        'Partager un SITREP direction avec statut patching.',
+      ],
+      escalation: [
+        'Escalader CISO/direction si patch impossible dans SLA.',
+        'Activer communication externe si risque client plausible.',
+      ],
+      templateId: 'tpl-004',
+      analysisSlug: 'vulnerabilites-edge-priorisation',
+    },
+  ];
+};
+
+const buildMonthlyPriorityLabel = (riskScore: number, locale: SupportedLocale): string => {
+  const isEnglish = locale === 'en';
+
+  if (riskScore >= 85) {
+    return isEnglish ? 'Priority P1 - act in 24h' : 'Priorité P1 - agir sous 24h';
+  }
+  if (riskScore >= 70) {
+    return isEnglish ? 'Priority P2 - act in 72h' : 'Priorité P2 - agir sous 72h';
+  }
+  return isEnglish ? 'Priority P3 - act in 7 days' : 'Priorité P3 - agir sous 7 jours';
+};
+
 const Home: React.FC = () => {
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
   const isEnglish = locale === 'en';
+  const { guides } = React.useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const localizedAbsolutePath = (path: string): string =>
     `https://cyber-guide.fr${buildLocalizedPath(path, locale)}`;
 
-  const showcasedSoftwares = softwares.slice(0, 12);
   const now = new Date();
   const monthIndex = now.getMonth();
   const threatFocus = THREAT_FOCUS_CALENDAR[monthIndex];
@@ -422,6 +639,26 @@ const Home: React.FC = () => {
     .replace(/^./, (char) => char.toUpperCase());
   const blueprintLabel = `THREAT_INDEX_${now.getFullYear()}`;
   const severityBadgeClassName = SEVERITY_BADGE_CLASSNAMES[threatFocus.severity];
+  const monthlyPriorityLabel = buildMonthlyPriorityLabel(riskScore, locale);
+  const financialMidpoint = Math.round((financialRange.lower + financialRange.upper) / 2);
+  const quickResponsePlans = React.useMemo(() => getQuickResponsePlans(locale), [locale]);
+  const [selectedPlanId, setSelectedPlanId] = React.useState<string>(quickResponsePlans[0].id);
+
+  React.useEffect(() => {
+    setSelectedPlanId((currentPlanId) =>
+      quickResponsePlans.some((plan) => plan.id === currentPlanId)
+        ? currentPlanId
+        : quickResponsePlans[0].id,
+    );
+  }, [quickResponsePlans]);
+
+  const selectedPlan =
+    quickResponsePlans.find((plan) => plan.id === selectedPlanId) ?? quickResponsePlans[0];
+  const cveNvdUrl = `https://nvd.nist.gov/vuln/detail/${threatFocus.cve}`;
+  const cisaKevUrl = `https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=${encodeURIComponent(
+    threatFocus.cve,
+  )}`;
+  const certFrUrl = 'https://www.cert.ssi.gouv.fr/';
   const copy = isEnglish
     ? {
         seoTitle: 'Cyber Guide - Operational cybersecurity',
@@ -469,14 +706,29 @@ const Home: React.FC = () => {
           'Complete tracks to move from analysis to execution: Active Directory, ransomware, and NIS2 readiness.',
         readGuide: 'Read guide',
         viewAllGuides: 'View all guides',
-        softwareReferences: 'Reference software stack',
-        softwareDescription:
-          'Cyber Guide relies on recognized tools for detection, investigation, and remediation.',
-        softwareCatalog: 'View full software catalog',
         monthVulnerabilityStat: 'Vulnerability of the month',
         patchWindowStat: 'Recommended patch window',
         attackVectorStat: 'Priority attack vector',
         sourceFootnote: 'Source: consolidated CVE/NVD and vendor monitoring by Cyber Guide',
+        quickAssistantTitle: 'Incident starter - first 15 minutes',
+        quickAssistantSubtitle:
+          'Choose a scenario and execute immediate actions before expanding full response operations.',
+        triggerLabel: 'Trigger',
+        firstFiveLabel: '0-5 min',
+        nextTenLabel: '5-15 min',
+        escalationLabel: 'Escalation',
+        openTemplate: 'Open response template',
+        openAnalysis: 'Open related analysis',
+        vulnBriefTitle: 'Monthly vulnerability brief',
+        vulnBriefSubtitle:
+          'Beginner-friendly operational summary: priority, impact estimate, and verified references.',
+        priorityLabel: 'Operational priority',
+        midpointImpactLabel: 'Estimated impact midpoint (24h-72h)',
+        monthlyChecklistLabel: 'Immediate monthly checklist',
+        checklistPatch: 'Patch exposed assets and validate post-change integrity.',
+        checklistAccess: 'Restrict admin exposure and verify privileged account activity.',
+        checklistDetect: 'Enable temporary detections around the main attack vector.',
+        officialSources: 'Official references',
       }
     : {
         seoTitle: 'Cyber Guide - Cybersécurité opérationnelle',
@@ -487,7 +739,7 @@ const Home: React.FC = () => {
         heroTitleAccent: 'Opérationnelle',
         heroDescription:
           "Plateforme d'analyse, de triage et de procédures pour les équipes cybersécurité opérationnelle. Structurez votre défense avec des templates alignés sur les standards et référentiels fiables.",
-        chips: ['Defensif uniquement', 'Guides actionnables', 'Basee sur standards'],
+        chips: ['Défensif uniquement', 'Guides actionnables', 'Basée sur standards'],
         analysesCta: 'Consulter les analyses',
         templatesCta: 'Ouvrir les templates',
         guidesLink: 'Parcours guides',
@@ -500,11 +752,11 @@ const Home: React.FC = () => {
         scoreHint: 'Plus le score est proche de 100, plus le risque opérationnel est élevé.',
         financialImpact: 'Impact financier indicatif (24h-72h)',
         financialHint:
-          'Estimation pédagogique pour prioriser. A adapter à votre contexte métier.',
+          'Estimation pédagogique pour prioriser. À adapter à votre contexte métier.',
         factorLabel: 'Facteur',
         priorityPatchBadge: 'PATCH PRIORITAIRE',
         mainVector: 'Vecteur principal',
-        recommendedAction: 'Action operationnelle recommandee',
+        recommendedAction: 'Action opérationnelle recommandée',
         editorialNote:
           'Sélection éditoriale mensuelle Cyber Guide pour orienter la priorisation sécurité.',
         monthlyCycle: 'CYCLE MENSUEL',
@@ -518,22 +770,37 @@ const Home: React.FC = () => {
         card2Title: 'Active Directory Tiering',
         card2Body:
           'Segmentation T0/T1/T2 et durcissement des privilèges pour bloquer les mouvements latéraux.',
-        card3Title: 'Preparation Ransomware',
+        card3Title: 'Préparation Ransomware',
         card3Body:
-          'Au-dela des sauvegardes: plans de reprise, confinement et reconstruction operationnelle.',
-        operationalGuides: 'Guides operationnels',
+          'Au-delà des sauvegardes : plans de reprise, confinement et reconstruction opérationnelle.',
+        operationalGuides: 'Guides opérationnels',
         guidesIntro:
-          'Parcours complets pour passer de l analyse a l execution: Active Directory, ransomware et conformite NIS2.',
+          "Parcours complets pour passer de l'analyse à l'exécution : Active Directory, ransomware et conformité NIS2.",
         readGuide: 'Lire le guide',
         viewAllGuides: 'Voir tous les guides',
-        softwareReferences: 'Logiciels de reference',
-        softwareDescription:
-          "Cyber Guide s'appuie sur un ecosysteme d'outils reconnus pour la detection, l'investigation et la remediation.",
-        softwareCatalog: 'Voir le catalogue logiciel complet',
-        monthVulnerabilityStat: 'Vulnerabilite du mois',
-        patchWindowStat: 'Fenetre de patch recommandee',
-        attackVectorStat: 'Vecteur d attaque prioritaire',
-        sourceFootnote: 'Source: CVE/NVD et veille editeur consolidees par Cyber Guide',
+        monthVulnerabilityStat: 'Vulnérabilité du mois',
+        patchWindowStat: 'Fenêtre de patch recommandée',
+        attackVectorStat: "Vecteur d'attaque prioritaire",
+        sourceFootnote: 'Source : CVE/NVD et veille éditeur consolidées par Cyber Guide',
+        quickAssistantTitle: 'Assistant incident - 15 premières minutes',
+        quickAssistantSubtitle:
+          "Choisissez un scénario et exécutez les actions immédiates avant d'étendre la réponse complète.",
+        triggerLabel: 'Déclencheur',
+        firstFiveLabel: '0-5 min',
+        nextTenLabel: '5-15 min',
+        escalationLabel: 'Escalade',
+        openTemplate: 'Ouvrir le template de réponse',
+        openAnalysis: "Ouvrir l'analyse associée",
+        vulnBriefTitle: 'Brief vulnérabilité du mois',
+        vulnBriefSubtitle:
+          'Résumé opérationnel simple: priorité, impact estimé et sources vérifiées.',
+        priorityLabel: 'Priorité opérationnelle',
+        midpointImpactLabel: 'Impact estimé médian (24h-72h)',
+        monthlyChecklistLabel: 'Checklist mensuelle immédiate',
+        checklistPatch: "Corriger les actifs exposés et valider l'intégrité post-changement.",
+        checklistAccess: "Réduire l'exposition admin et contrôler l'activité des comptes à privilèges.",
+        checklistDetect: "Activer des détections temporaires sur le vecteur d'attaque principal.",
+        officialSources: 'Sources officielles',
       };
 
   return (
@@ -553,8 +820,8 @@ const Home: React.FC = () => {
                 'nis2',
               ]
             : [
-                'cybersecurite',
-                'cybersecurite operationnelle',
+                'cybersécurité',
+                'cybersécurité opérationnelle',
                 'templates cyber',
                 'threat intelligence',
                 'analyses cyber',
@@ -580,7 +847,6 @@ const Home: React.FC = () => {
             name: 'Cyber Guide',
             url: 'https://cyber-guide.fr',
             logo: 'https://cyber-guide.fr/assets/cyberguide-icon-512.png',
-            sameAs: ['https://cyber.gouv.fr', 'https://www.nist.gov/cyberframework'],
           },
         ]}
       />
@@ -606,7 +872,6 @@ const Home: React.FC = () => {
                     width={888}
                     height={290}
                     loading="eager"
-                    fetchPriority="high"
                     decoding="async"
                   />
                 </div>
@@ -825,6 +1090,199 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      <section className="section-auto border-b border-slate-200 bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-7">
+              <BlueprintPanel title={copy.quickAssistantTitle} label="IR_15_MIN">
+                <p className="mb-5 text-sm leading-relaxed text-slate-600">
+                  {copy.quickAssistantSubtitle}
+                </p>
+
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {quickResponsePlans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedPlanId(plan.id)}
+                      className={`rounded-sm border px-3 py-1.5 text-xs font-mono uppercase tracking-wide transition-colors ${
+                        selectedPlan.id === plan.id
+                          ? 'border-brand-steel bg-brand-navy text-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-brand-steel hover:text-brand-navy'
+                      }`}
+                    >
+                      {plan.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="text-lg font-display font-bold text-brand-navy">{selectedPlan.title}</h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    <span className="font-semibold text-brand-navy">{copy.triggerLabel}:</span>{' '}
+                    {selectedPlan.trigger}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-sm border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-brand-steel">
+                      {copy.firstFiveLabel}
+                    </p>
+                    <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                      {selectedPlan.firstFive.map((step) => (
+                        <li key={step} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-sm border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-brand-steel">
+                      {copy.nextTenLabel}
+                    </p>
+                    <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                      {selectedPlan.nextTen.map((step) => (
+                        <li key={step} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-sm border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-brand-steel">
+                      {copy.escalationLabel}
+                    </p>
+                    <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                      {selectedPlan.escalation.map((step) => (
+                        <li key={step} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-gold"></span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link to={localizedPath(`/templates/${selectedPlan.templateId}`)}>
+                    <Button as="span" variant="secondary" size="sm" icon={FileText}>
+                      {copy.openTemplate}
+                    </Button>
+                  </Link>
+                  <Link to={localizedPath(`/analyses/${selectedPlan.analysisSlug}`)}>
+                    <Button as="span" variant="outline" size="sm" icon={ArrowRight}>
+                      {copy.openAnalysis}
+                    </Button>
+                  </Link>
+                </div>
+              </BlueprintPanel>
+            </div>
+
+            <div className="lg:col-span-5">
+              <BlueprintPanel title={copy.vulnBriefTitle} label={monthLabel}>
+                <p className="mb-5 text-sm leading-relaxed text-slate-600">{copy.vulnBriefSubtitle}</p>
+
+                <div className="rounded-sm border border-brand-navy/15 bg-brand-pale/30 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                        {copy.vulnerabilityOfMonth}
+                      </p>
+                      <h3 className="text-2xl font-display font-bold text-brand-navy">
+                        {threatFocus.cve}
+                      </h3>
+                    </div>
+                    <Badge className={severityBadgeClassName}>
+                      {getSeverityLabel(threatFocus.severity, locale)}
+                    </Badge>
+                  </div>
+
+                  <p className="text-sm font-semibold text-brand-navy">{threatFocus.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {copy.productLabel}: {threatFocus.product}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-sm border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                      {copy.priorityLabel}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-brand-navy">{monthlyPriorityLabel}</p>
+                  </div>
+                  <div className="rounded-sm border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                      {copy.midpointImpactLabel}
+                    </p>
+                    <p className="mt-1 text-xl font-display font-bold text-brand-navy">
+                      {formatKiloEuro(financialMidpoint, locale)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-sm border border-slate-200 bg-white p-3">
+                  <p className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                    <AlertTriangle size={12} className="text-brand-steel" />
+                    {copy.monthlyChecklistLabel}
+                  </p>
+                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                      <span>{copy.checklistPatch}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                      <span>{copy.checklistAccess}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                      <span>{copy.checklistDetect}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-4 rounded-sm border border-slate-200 bg-slate-50 p-3">
+                  <p className="mb-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                    {copy.officialSources}
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <a
+                      href={cveNvdUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-sm border border-slate-300 bg-white px-2 py-1 font-semibold text-brand-navy hover:border-brand-steel"
+                    >
+                      NVD
+                    </a>
+                    <a
+                      href={cisaKevUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-sm border border-slate-300 bg-white px-2 py-1 font-semibold text-brand-navy hover:border-brand-steel"
+                    >
+                      CISA KEV
+                    </a>
+                    <a
+                      href={certFrUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-sm border border-slate-300 bg-white px-2 py-1 font-semibold text-brand-navy hover:border-brand-steel"
+                    >
+                      CERT-FR
+                    </a>
+                  </div>
+                </div>
+              </BlueprintPanel>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* STRATEGIC PILLARS */}
       <section className="section-auto py-24 bg-slate-50 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -970,58 +1428,6 @@ const Home: React.FC = () => {
             <Link to={localizedPath('/guides')}>
               <Button as="span" variant="ghost" icon={ArrowRight}>
                 {copy.viewAllGuides}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-auto bg-slate-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-display font-bold text-brand-navy">
-              {copy.softwareReferences}
-            </h2>
-            <p className="mx-auto mt-2 max-w-3xl text-sm text-slate-600">
-              {copy.softwareDescription}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-            {showcasedSoftwares.map((software) => (
-              <Link
-                key={software.id}
-                to={localizedPath('/outils')}
-                className="group rounded-sm border border-slate-200 bg-white p-3 transition-colors hover:border-brand-steel"
-              >
-                <div className="mb-2 flex h-10 items-center justify-center rounded-sm border border-slate-100 bg-slate-50 p-1">
-                  {software.logoPath ? (
-                    <img
-                      src={software.logoPath}
-                      alt={`Logo ${software.name}`}
-                      className="max-h-full max-w-full object-contain"
-                      width={28}
-                      height={28}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-slate-600">
-                      {software.name.slice(0, 2)}
-                    </span>
-                  )}
-                </div>
-                <div className="text-center text-[11px] font-medium text-slate-600 group-hover:text-brand-navy">
-                  {software.name}
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <Link to={localizedPath('/outils')}>
-              <Button as="span" variant="ghost" size="sm" icon={ArrowRight}>
-                {copy.softwareCatalog}
               </Button>
             </Link>
           </div>

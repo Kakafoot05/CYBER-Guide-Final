@@ -8,7 +8,6 @@ import {
   TechSeparator,
   type BadgeColor,
 } from '../components/UI';
-import { analyses, playbooks } from '../data';
 import type { Analysis, Playbook } from '../types';
 import {
   Search,
@@ -33,6 +32,12 @@ import {
 } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
+import { getLocalizedContent } from '../utils/contentLocale';
+import {
+  localizePlaybookCategory,
+  localizePlaybookDifficulty,
+  localizePlaybookSeverity,
+} from '../utils/labels';
 
 type SortOption = 'severity_desc' | 'title_asc' | 'id_asc';
 
@@ -44,6 +49,8 @@ type RunState = {
   updatedAt: string;
 };
 
+const ALL_FILTER_VALUE = 'Tous';
+
 const SEVERITY_ORDER: Record<Playbook['severity'], number> = {
   Critique: 4,
   Élevée: 3,
@@ -51,11 +58,7 @@ const SEVERITY_ORDER: Record<Playbook['severity'], number> = {
   Faible: 1,
 };
 
-const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
-  { value: 'severity_desc', label: 'Severite (Critique > Faible)' },
-  { value: 'title_asc', label: 'Titre (A->Z)' },
-  { value: 'id_asc', label: 'Reference (pb-001...)' },
-];
+const SORT_OPTIONS: SortOption[] = ['severity_desc', 'title_asc', 'id_asc'];
 
 const normalizeText = (value: string): string =>
   value
@@ -180,112 +183,145 @@ const hydrateRunState = (playbook: Playbook, rawState: string | null): RunState 
   }
 };
 
-const formatTimestamp = (isoDate: string): string => {
+const formatTimestamp = (isoDate: string, locale: 'fr-FR' | 'en-US'): string => {
   const parsed = new Date(isoDate);
   if (Number.isNaN(parsed.getTime())) {
     return '—';
   }
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(parsed);
+};
+
+type PlaybookExportCopy = {
+  executionReportTitle: string;
+  meta: string;
+  title: string;
+  severity: string;
+  category: string;
+  estimatedTime: string;
+  difficulty: string;
+  startedAt: string;
+  updatedAt: string;
+  operationalBrief: string;
+  context: string;
+  objective: string;
+  businessRisk: string;
+  keyChecks: string;
+  escalationCriteria: string;
+  coordination: string;
+  triggers: string;
+  prerequisites: string;
+  incidentNotes: string;
+  noGlobalNote: string;
+  steps: string;
+  step: string;
+  command: string;
+  warning: string;
+  stepNote: string;
+  noStepNote: string;
+  artifacts: string;
+  definitionOfDone: string;
+  linkedAnalyses: string;
 };
 
 const buildPlaybookExportMarkdown = (
   playbook: Playbook,
   runState: RunState,
   relatedAnalyses: Analysis[],
+  copy: PlaybookExportCopy,
 ): string => {
   const lines: string[] = [];
   const difficulty = playbook.difficulty ?? '—';
   const estimatedTime = playbook.estimatedTime ?? '—';
 
-  lines.push(`# Rapport d'execution - ${playbook.title}`);
+  lines.push(`# ${copy.executionReportTitle} - ${playbook.title}`);
   lines.push('');
-  lines.push('## Meta');
+  lines.push(`## ${copy.meta}`);
   lines.push(`- ID: ${playbook.id}`);
-  lines.push(`- Titre: ${playbook.title}`);
-  lines.push(`- Severite: ${playbook.severity}`);
-  lines.push(`- Categorie: ${playbook.category}`);
-  lines.push(`- Temps estime: ${estimatedTime}`);
-  lines.push(`- Difficulte: ${difficulty}`);
-  lines.push(`- Demarre le: ${runState.startedAt}`);
-  lines.push(`- Derniere mise a jour: ${runState.updatedAt}`);
+  lines.push(`- ${copy.title}: ${playbook.title}`);
+  lines.push(`- ${copy.severity}: ${playbook.severity}`);
+  lines.push(`- ${copy.category}: ${playbook.category}`);
+  lines.push(`- ${copy.estimatedTime}: ${estimatedTime}`);
+  lines.push(`- ${copy.difficulty}: ${difficulty}`);
+  lines.push(`- ${copy.startedAt}: ${runState.startedAt}`);
+  lines.push(`- ${copy.updatedAt}: ${runState.updatedAt}`);
 
   if (playbook.operationalBrief) {
     lines.push('');
-    lines.push('## Brief operationnel');
-    lines.push(`- Contexte: ${playbook.operationalBrief.context}`);
-    lines.push(`- Objectif: ${playbook.operationalBrief.objective}`);
-    lines.push(`- Risque metier: ${playbook.operationalBrief.businessRisk}`);
-    lines.push('- Verifications cles:');
+    lines.push(`## ${copy.operationalBrief}`);
+    lines.push(`- ${copy.context}: ${playbook.operationalBrief.context}`);
+    lines.push(`- ${copy.objective}: ${playbook.operationalBrief.objective}`);
+    lines.push(`- ${copy.businessRisk}: ${playbook.operationalBrief.businessRisk}`);
+    lines.push(`- ${copy.keyChecks}:`);
     for (const item of playbook.operationalBrief.keyChecks) {
       lines.push(`  - ${item}`);
     }
-    lines.push('- Criteres d escalade:');
+    lines.push(`- ${copy.escalationCriteria}:`);
     for (const item of playbook.operationalBrief.escalationSignals) {
       lines.push(`  - ${item}`);
     }
-    lines.push('- Coordination:');
+    lines.push(`- ${copy.coordination}:`);
     for (const item of playbook.operationalBrief.handoffTo) {
       lines.push(`  - ${item}`);
     }
   }
 
   lines.push('');
-  lines.push('## Declencheurs');
+  lines.push(`## ${copy.triggers}`);
   for (const trigger of playbook.triggers) {
     lines.push(`- ${trigger}`);
   }
 
   lines.push('');
-  lines.push('## Pre-requis');
+  lines.push(`## ${copy.prerequisites}`);
   for (const prerequisite of playbook.prerequisites) {
     lines.push(`- ${prerequisite}`);
   }
 
   lines.push('');
-  lines.push('## Notes incident (global)');
-  lines.push(runState.notesGlobal.trim() || 'Aucune note globale.');
+  lines.push(`## ${copy.incidentNotes}`);
+  lines.push(runState.notesGlobal.trim() || copy.noGlobalNote);
 
   lines.push('');
-  lines.push('## Etapes');
+  lines.push(`## ${copy.steps}`);
   playbook.steps.forEach((step, index) => {
     const checked = runState.checkedSteps[step.id] ? 'x' : ' ';
     lines.push('');
-    lines.push(`### [${checked}] Etape ${index + 1} - ${step.title}`);
+    lines.push(`### [${checked}] ${copy.step} ${index + 1} - ${step.title}`);
     lines.push(step.description);
 
     if (step.command) {
-      lines.push('Commande:');
+      lines.push(`${copy.command}:`);
       lines.push('```');
       lines.push(step.command);
       lines.push('```');
     }
 
     if (step.warning) {
-      lines.push(`Avertissement: ${step.warning}`);
+      lines.push(`${copy.warning}: ${step.warning}`);
     }
 
     const note = runState.notesByStep[step.id]?.trim();
-    lines.push(`Note etape: ${note || 'Aucune note.'}`);
+    lines.push(`${copy.stepNote}: ${note || copy.noStepNote}`);
   });
 
   lines.push('');
-  lines.push('## Artifacts');
+  lines.push(`## ${copy.artifacts}`);
   for (const artifact of playbook.artifacts) {
     lines.push(`- ${artifact}`);
   }
 
   lines.push('');
-  lines.push('## Definition of Done');
+  lines.push(`## ${copy.definitionOfDone}`);
   for (const item of playbook.definitionOfDone) {
     lines.push(`- [ ] ${item}`);
   }
 
   if (relatedAnalyses.length > 0) {
     lines.push('');
-    lines.push('## Analyses liees');
+    lines.push(`## ${copy.linkedAnalyses}`);
     for (const analysis of relatedAnalyses) {
       lines.push(`- ${analysis.title} (/analyses/${analysis.slug})`);
     }
@@ -310,15 +346,218 @@ const downloadMarkdown = (filename: string, content: string): void => {
 const Playbooks: React.FC = () => {
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const uiLocale = isEnglish ? 'en-US' : 'fr-FR';
+  const { analyses, playbooks } = useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { id: routePlaybookIdParam } = useParams<{ id?: string }>();
 
+  const copy = isEnglish
+    ? {
+        pageTitle: 'Procedures and Playbooks',
+        pageSubtitle: 'Operational response and containment workflows',
+        pageMeta: ['IR', 'SOC', 'Crisis management'],
+        searchLabel: 'Search',
+        searchPlaceholder: 'Search by title, trigger, artifact, command...',
+        category: 'Category',
+        difficulty: 'Difficulty',
+        severity: 'Severity',
+        all: 'All',
+        withCommandsOnly: 'With commands only',
+        availablePlaybooks: 'playbooks available',
+        sortLabel: 'Sort',
+        sortSeverity: 'Severity (Critical > Low)',
+        sortTitle: 'Title (A->Z)',
+        sortId: 'Reference (pb-001...)',
+        recommendedPath: 'Recommended path',
+        recommendedBody:
+          'Need a complete framework before execution? Start with pillar guides, then open linked playbooks.',
+        openGuides: 'Open guides',
+        seeAnalyses: 'See analyses too',
+        noResults: 'No playbook matches these filters.',
+        openPlaybookAria: 'Open playbook',
+        steps: 'Steps',
+        open: 'Open',
+        printHeaderRef: 'REF',
+        printHeaderSeverity: 'SEVERITY',
+        context: 'Context',
+        objective: 'Objective',
+        businessRisk: 'Business risk',
+        backToList: 'Back to list',
+        runMode: 'Execution mode',
+        runModeActive: 'Execution mode enabled',
+        print: 'Print',
+        estimatedTime: 'Estimated time',
+        operationalNotebook: 'Operational notebook',
+        fieldGuideFormat: 'Field guide format',
+        summary: 'Summary',
+        chapter: 'Chapter',
+        keyChecks: 'Key checks',
+        escalationCriteria: 'Escalation criteria',
+        linkedAnalyses: 'Linked analyses',
+        runModeIncident: 'Incident run mode',
+        completed: 'Completed',
+        startedAt: 'Started at',
+        updatedAt: 'Last update',
+        notesPlaceholder: 'Context, assumptions, decisions, escalations...',
+        copyExport: 'Copy export',
+        downloadMd: 'Download .md',
+        reset: 'Reset',
+        resetDone: 'Execution state reset',
+        exportGenerated: 'Export generated ✅',
+        exportCopied: 'Export copied ✅',
+        downloadSuccess: '.md file downloaded ✅',
+        toastCopyOk: 'Copied ✅',
+        toastCopyFailed: 'Copy failed',
+        triggerSection: 'Triggers',
+        prerequisitesSection: 'Prerequisites',
+        commandCopied: 'Command copied ✅',
+        copyCommandAria: 'Copy command for step',
+        copyCommand: 'Copy',
+        stepNote: 'Step note',
+        artifactsToCollect: 'Artifacts to collect',
+        messageTemplates: 'Communication templates',
+        templateCopied: 'Template copied ✅',
+        definitionOfDone: 'Definition of done (closure)',
+        printPlaybook: 'Print playbook',
+        export: {
+          executionReportTitle: 'Execution report',
+          meta: 'Metadata',
+          title: 'Title',
+          severity: 'Severity',
+          category: 'Category',
+          estimatedTime: 'Estimated time',
+          difficulty: 'Difficulty',
+          startedAt: 'Started at',
+          updatedAt: 'Last updated',
+          operationalBrief: 'Operational brief',
+          context: 'Context',
+          objective: 'Objective',
+          businessRisk: 'Business risk',
+          keyChecks: 'Key checks',
+          escalationCriteria: 'Escalation criteria',
+          coordination: 'Coordination',
+          triggers: 'Triggers',
+          prerequisites: 'Prerequisites',
+          incidentNotes: 'Incident notes (global)',
+          noGlobalNote: 'No global note.',
+          steps: 'Steps',
+          step: 'Step',
+          command: 'Command',
+          warning: 'Warning',
+          stepNote: 'Step note',
+          noStepNote: 'No note.',
+          artifacts: 'Artifacts',
+          definitionOfDone: 'Definition of done',
+          linkedAnalyses: 'Linked analyses',
+        } satisfies PlaybookExportCopy,
+      }
+    : {
+        pageTitle: 'Procédures & Playbooks',
+        pageSubtitle: 'Réponse opérationnelle et confinement',
+        pageMeta: ['IR', 'SOC', 'Gestion de crise'],
+        searchLabel: 'Recherche',
+        searchPlaceholder: 'Rechercher par titre, déclencheur, artefact, commande...',
+        category: 'Catégorie',
+        difficulty: 'Difficulté',
+        severity: 'Sévérité',
+        all: 'Tous',
+        withCommandsOnly: 'Avec commandes uniquement',
+        availablePlaybooks: 'playbooks disponibles',
+        sortLabel: 'Tri',
+        sortSeverity: 'Sévérité (Critique > Faible)',
+        sortTitle: 'Titre (A->Z)',
+        sortId: 'Référence (pb-001...)',
+        recommendedPath: 'Parcours recommandé',
+        recommendedBody:
+          "Besoin d'un cadre complet avant exécution ? Commencez par les guides piliers puis ouvrez les playbooks liés.",
+        openGuides: 'Ouvrir les guides',
+        seeAnalyses: 'Voir aussi les analyses',
+        noResults: 'Aucun playbook ne correspond à ces filtres.',
+        openPlaybookAria: 'Ouvrir le playbook',
+        steps: 'Étapes',
+        open: 'Ouvrir',
+        printHeaderRef: 'REF',
+        printHeaderSeverity: 'SÉVÉRITÉ',
+        context: 'Contexte',
+        objective: 'Objectif',
+        businessRisk: 'Risque métier',
+        backToList: 'Retour à la liste',
+        runMode: 'Mode exécution',
+        runModeActive: 'Mode exécution actif',
+        print: 'Imprimer',
+        estimatedTime: 'Temps estimé',
+        operationalNotebook: 'Carnet opérationnel',
+        fieldGuideFormat: 'Format guide terrain',
+        summary: 'Sommaire',
+        chapter: 'Chapitre',
+        keyChecks: 'Vérifications clés',
+        escalationCriteria: "Critères d'escalade",
+        linkedAnalyses: 'Analyses liées',
+        runModeIncident: 'Mode exécution incident',
+        completed: 'Complété',
+        startedAt: 'Démarré',
+        updatedAt: 'Dernière MÀJ',
+        notesPlaceholder: 'Contexte, hypothèses, décisions, escalades...',
+        copyExport: "Copier l'export",
+        downloadMd: 'Télécharger .md',
+        reset: 'Réinitialiser',
+        resetDone: 'État exécution réinitialisé',
+        exportGenerated: 'Export généré ✅',
+        exportCopied: 'Export copié ✅',
+        downloadSuccess: 'Fichier .md téléchargé ✅',
+        toastCopyOk: 'Copie ✅',
+        toastCopyFailed: 'Copie impossible',
+        triggerSection: 'Déclencheurs',
+        prerequisitesSection: 'Pré-requis',
+        commandCopied: 'Commande copiée ✅',
+        copyCommandAria: "Copier la commande de l'étape",
+        copyCommand: 'Copier',
+        stepNote: 'Note étape',
+        artifactsToCollect: 'Preuves à collecter (Artifacts)',
+        messageTemplates: 'Templates de communication',
+        templateCopied: 'Template copié ✅',
+        definitionOfDone: 'Definition of Done (Clôture)',
+        printPlaybook: 'Imprimer le Playbook',
+        export: {
+          executionReportTitle: "Rapport d'exécution",
+          meta: 'Meta',
+          title: 'Titre',
+          severity: 'Sévérité',
+          category: 'Catégorie',
+          estimatedTime: 'Temps estimé',
+          difficulty: 'Difficulté',
+          startedAt: 'Démarré le',
+          updatedAt: 'Dernière mise à jour',
+          operationalBrief: 'Brief opérationnel',
+          context: 'Contexte',
+          objective: 'Objectif',
+          businessRisk: 'Risque métier',
+          keyChecks: 'Vérifications clés',
+          escalationCriteria: "Critères d'escalade",
+          coordination: 'Coordination',
+          triggers: 'Déclencheurs',
+          prerequisites: 'Pré-requis',
+          incidentNotes: 'Notes incident (global)',
+          noGlobalNote: 'Aucune note globale.',
+          steps: 'Étapes',
+          step: 'Étape',
+          command: 'Commande',
+          warning: 'Avertissement',
+          stepNote: 'Note étape',
+          noStepNote: 'Aucune note.',
+          artifacts: 'Artifacts',
+          definitionOfDone: 'Definition of Done',
+          linkedAnalyses: 'Analyses liées',
+        } satisfies PlaybookExportCopy,
+      };
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Tous');
-  const [activeDifficulty, setActiveDifficulty] = useState('Tous');
-  const [activeSeverity, setActiveSeverity] = useState('Tous');
+  const [activeCategory, setActiveCategory] = useState(ALL_FILTER_VALUE);
+  const [activeDifficulty, setActiveDifficulty] = useState(ALL_FILTER_VALUE);
+  const [activeSeverity, setActiveSeverity] = useState(ALL_FILTER_VALUE);
   const [withCommandsOnly, setWithCommandsOnly] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('severity_desc');
 
@@ -362,12 +601,12 @@ const Playbooks: React.FC = () => {
       selectedPlaybook
         ? analyses.filter((analysis) => analysis.linkedPlaybooks?.includes(selectedPlaybook.id))
         : [],
-    [selectedPlaybook],
+    [selectedPlaybook, analyses],
   );
 
   const categories = useMemo(
-    () => ['Tous', ...Array.from(new Set(playbooks.map((playbook) => playbook.category)))],
-    [],
+    () => [ALL_FILTER_VALUE, ...Array.from(new Set(playbooks.map((playbook) => playbook.category)))],
+    [playbooks],
   );
 
   const difficulties = useMemo(() => {
@@ -381,8 +620,8 @@ const Playbooks: React.FC = () => {
       .filter((value) => !ordered.includes(value))
       .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 
-    return ['Tous', ...ordered.filter((value) => values.has(value)), ...extra];
-  }, []);
+    return [ALL_FILTER_VALUE, ...ordered.filter((value) => values.has(value)), ...extra];
+  }, [playbooks]);
 
   const searchIndexByPlaybookId = useMemo(() => {
     const index = new Map<string, string>();
@@ -390,7 +629,7 @@ const Playbooks: React.FC = () => {
       index.set(playbook.id, buildSearchIndex(playbook));
     }
     return index;
-  }, []);
+  }, [playbooks]);
 
   const normalizedSearchTerm = normalizeText(searchTerm.trim());
 
@@ -401,10 +640,12 @@ const Playbooks: React.FC = () => {
         searchIndexByPlaybookId.get(playbook.id)?.includes(normalizedSearchTerm) === true;
 
       const playbookDifficulty = playbook.difficulty ?? '—';
-      const matchesCategory = activeCategory === 'Tous' || playbook.category === activeCategory;
+      const matchesCategory =
+        activeCategory === ALL_FILTER_VALUE || playbook.category === activeCategory;
       const matchesDifficulty =
-        activeDifficulty === 'Tous' || playbookDifficulty === activeDifficulty;
-      const matchesSeverity = activeSeverity === 'Tous' || playbook.severity === activeSeverity;
+        activeDifficulty === ALL_FILTER_VALUE || playbookDifficulty === activeDifficulty;
+      const matchesSeverity =
+        activeSeverity === ALL_FILTER_VALUE || playbook.severity === activeSeverity;
       const matchesCommands =
         !withCommandsOnly || playbook.steps.some((step) => Boolean(step.command?.trim()));
 
@@ -421,7 +662,7 @@ const Playbooks: React.FC = () => {
       }
 
       if (sortOption === 'title_asc') {
-        return left.title.localeCompare(right.title, 'fr', { sensitivity: 'base' });
+        return left.title.localeCompare(right.title, uiLocale, { sensitivity: 'base' });
       }
 
       return comparePlaybookId(left.id, right.id);
@@ -429,6 +670,7 @@ const Playbooks: React.FC = () => {
 
     return visiblePlaybooks;
   }, [
+    playbooks,
     normalizedSearchTerm,
     searchIndexByPlaybookId,
     activeCategory,
@@ -436,6 +678,7 @@ const Playbooks: React.FC = () => {
     activeSeverity,
     withCommandsOnly,
     sortOption,
+    uiLocale,
   ]);
 
   const completedStepsCount = useMemo(() => {
@@ -484,7 +727,7 @@ const Playbooks: React.FC = () => {
         : buildLocalizedPath('/playbooks', locale),
       { replace: true },
     );
-  }, [routePlaybookId, legacyPlaybookId, navigate, locale]);
+  }, [routePlaybookId, legacyPlaybookId, navigate, locale, playbooks]);
 
   useEffect(() => {
     if (!routePlaybookId) {
@@ -504,12 +747,12 @@ const Playbooks: React.FC = () => {
     }, 1600);
   };
 
-  const copyToClipboard = async (text: string, successMessage = 'Copie ✅') => {
+  const copyToClipboard = async (text: string, successMessage = copy.toastCopyOk) => {
     try {
       await navigator.clipboard.writeText(text);
       showToast(successMessage);
     } catch {
-      showToast('Copie impossible');
+      showToast(copy.toastCopyFailed);
     }
   };
 
@@ -602,7 +845,7 @@ const Playbooks: React.FC = () => {
       [selectedPlaybook.id]: nextState,
     }));
     setGeneratedExport('');
-    showToast('Suivi reinitialise');
+    showToast(copy.resetDone);
   };
 
   const getExportContent = (): string => {
@@ -612,7 +855,7 @@ const Playbooks: React.FC = () => {
 
     return (
       generatedExport ||
-      buildPlaybookExportMarkdown(selectedPlaybook, activeRunState, relatedAnalyses)
+      buildPlaybookExportMarkdown(selectedPlaybook, activeRunState, relatedAnalyses, copy.export)
     );
   };
 
@@ -621,9 +864,14 @@ const Playbooks: React.FC = () => {
       return;
     }
 
-    const markdown = buildPlaybookExportMarkdown(selectedPlaybook, activeRunState, relatedAnalyses);
+    const markdown = buildPlaybookExportMarkdown(
+      selectedPlaybook,
+      activeRunState,
+      relatedAnalyses,
+      copy.export,
+    );
     setGeneratedExport(markdown);
-    showToast('Export genere ✅');
+    showToast(copy.exportGenerated);
   };
 
   const copyExport = async () => {
@@ -632,7 +880,7 @@ const Playbooks: React.FC = () => {
       return;
     }
 
-    await copyToClipboard(content, 'Export copie ✅');
+    await copyToClipboard(content, copy.exportCopied);
   };
 
   const downloadExportFile = () => {
@@ -642,7 +890,7 @@ const Playbooks: React.FC = () => {
     }
 
     downloadMarkdown(`${selectedPlaybook.id}-execution.md`, content);
-    showToast('Fichier .md telecharge ✅');
+    showToast(copy.downloadSuccess);
   };
 
   const playbooksSeoSchema = selectedPlaybook
@@ -654,7 +902,7 @@ const Playbooks: React.FC = () => {
             {
               '@type': 'ListItem',
               position: 1,
-              name: 'Accueil',
+              name: isEnglish ? 'Home' : 'Accueil',
               item: 'https://cyber-guide.fr/',
             },
             {
@@ -676,9 +924,9 @@ const Playbooks: React.FC = () => {
           '@type': 'HowTo',
           name: selectedPlaybook.title,
           description: selectedPlaybook.description,
-          inLanguage: 'fr-FR',
+          inLanguage: isEnglish ? 'en-US' : 'fr-FR',
           url: `https://cyber-guide.fr/playbooks/${selectedPlaybook.id}`,
-          about: `${selectedPlaybook.category} - severite ${selectedPlaybook.severity}`,
+          about: `${selectedPlaybook.category} - ${copy.severity.toLowerCase()} ${selectedPlaybook.severity}`,
           supply: selectedPlaybook.artifacts.map((artifact) => ({
             '@type': 'HowToSupply',
             name: artifact,
@@ -700,7 +948,7 @@ const Playbooks: React.FC = () => {
         '@type': 'CollectionPage',
         name: 'Playbooks Cyber Guide',
         url: 'https://cyber-guide.fr/playbooks',
-        inLanguage: 'fr-FR',
+        inLanguage: isEnglish ? 'en-US' : 'fr-FR',
         mainEntity: {
           '@type': 'ItemList',
           itemListElement: playbooks.map((playbook, index) => ({
@@ -717,20 +965,22 @@ const Playbooks: React.FC = () => {
       <Seo
         title={
           selectedPlaybook
-            ? `${selectedPlaybook.title} | Playbook opérationnel`
-            : 'Playbooks opérationnels'
+            ? `${selectedPlaybook.title} | ${copy.pageTitle}`
+            : copy.pageTitle
         }
         description={
           selectedPlaybook
             ? selectedPlaybook.description
-            : 'Procedures operationnelles cyber pour reponse a incident, hardening et gouvernance.'
+            : isEnglish
+              ? 'Operational cybersecurity procedures for incident response, hardening, and governance.'
+              : 'Procédures opérationnelles cyber pour réponse à incident, hardening et gouvernance.'
         }
         path={selectedPlaybook ? `/playbooks/${selectedPlaybook.id}` : '/playbooks'}
         image="/assets/og/playbooks.svg"
         keywords={[
-          'playbook cyber',
+          isEnglish ? 'cyber playbook' : 'playbook cyber',
           'incident response',
-          'cybersecurite operationnelle',
+          isEnglish ? 'operational cybersecurity' : 'cybersécurité opérationnelle',
           'hardening',
           'gouvernance',
         ]}
@@ -740,9 +990,12 @@ const Playbooks: React.FC = () => {
 
       <div className="print:hidden">
         <ShieldHeader
-          title="Procedures & Playbooks"
-          subtitle="Operations"
-          meta={[`${playbooks.length} Referentiels`, 'Actionnable', 'Cyber operationnelle']}
+          title={copy.pageTitle}
+          subtitle={copy.pageSubtitle}
+          meta={[
+            `${playbooks.length} ${isEnglish ? 'references' : 'référentiels'}`,
+            ...copy.pageMeta.slice(0, 2),
+          ]}
         />
       </div>
 
@@ -750,7 +1003,7 @@ const Playbooks: React.FC = () => {
         {!isDetailRoute && (
           <div className="flex flex-col gap-6 mb-12 print:hidden bg-white p-6 rounded-sm border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2 text-brand-navy font-bold uppercase text-xs tracking-widest border-b border-slate-100 pb-2 mb-2">
-              <Filter size={14} /> Bibliotheque Operationnelle
+              <Filter size={14} /> {isEnglish ? 'Operational library' : 'Bibliothèque opérationnelle'}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[2fr_repeat(4,minmax(0,1fr))]">
@@ -761,7 +1014,7 @@ const Playbooks: React.FC = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Recherche full-text (titre, etapes, artefacts, commandes...)"
+                  placeholder={copy.searchPlaceholder}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:border-brand-steel focus:bg-white transition-colors text-sm"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -769,7 +1022,9 @@ const Playbooks: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-slate-500 uppercase">Categorie</label>
+                <label className="text-[10px] font-mono text-slate-500 uppercase">
+                  {copy.category}
+                </label>
                 <select
                   className="bg-slate-50 border border-slate-200 text-sm rounded-sm px-3 py-2 outline-none focus:border-brand-steel"
                   value={activeCategory}
@@ -777,14 +1032,18 @@ const Playbooks: React.FC = () => {
                 >
                   {categories.map((category) => (
                     <option key={category} value={category}>
-                      {category}
+                      {category === ALL_FILTER_VALUE
+                        ? copy.all
+                        : localizePlaybookCategory(category, locale)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-slate-500 uppercase">Difficulte</label>
+                <label className="text-[10px] font-mono text-slate-500 uppercase">
+                  {copy.difficulty}
+                </label>
                 <select
                   className="bg-slate-50 border border-slate-200 text-sm rounded-sm px-3 py-2 outline-none focus:border-brand-steel"
                   value={activeDifficulty}
@@ -792,37 +1051,49 @@ const Playbooks: React.FC = () => {
                 >
                   {difficulties.map((difficulty) => (
                     <option key={difficulty} value={difficulty}>
-                      {difficulty}
+                      {difficulty === ALL_FILTER_VALUE
+                        ? copy.all
+                        : localizePlaybookDifficulty(difficulty, locale)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-slate-500 uppercase">Severite</label>
+                <label className="text-[10px] font-mono text-slate-500 uppercase">
+                  {copy.severity}
+                </label>
                 <select
                   className="bg-slate-50 border border-slate-200 text-sm rounded-sm px-3 py-2 outline-none focus:border-brand-steel"
                   value={activeSeverity}
                   onChange={(event) => setActiveSeverity(event.target.value)}
                 >
-                  {['Tous', 'Critique', 'Élevée', 'Moyenne', 'Faible'].map((severity) => (
+                  {[ALL_FILTER_VALUE, 'Critique', 'Élevée', 'Moyenne', 'Faible'].map((severity) => (
                     <option key={severity} value={severity}>
-                      {severity}
+                      {severity === ALL_FILTER_VALUE
+                        ? copy.all
+                        : localizePlaybookSeverity(severity, locale)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono text-slate-500 uppercase">Tri</label>
+                <label className="text-[10px] font-mono text-slate-500 uppercase">
+                  {copy.sortLabel}
+                </label>
                 <select
                   className="bg-slate-50 border border-slate-200 text-sm rounded-sm px-3 py-2 outline-none focus:border-brand-steel"
                   value={sortOption}
                   onChange={(event) => setSortOption(event.target.value as SortOption)}
                 >
                   {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                    <option key={option} value={option}>
+                      {option === 'severity_desc'
+                        ? copy.sortSeverity
+                        : option === 'title_asc'
+                          ? copy.sortTitle
+                          : copy.sortId}
                     </option>
                   ))}
                 </select>
@@ -837,11 +1108,11 @@ const Playbooks: React.FC = () => {
                   checked={withCommandsOnly}
                   onChange={(event) => setWithCommandsOnly(event.target.checked)}
                 />
-                Avec commandes uniquement
+                {copy.withCommandsOnly}
               </label>
 
               <div className="text-xs text-slate-400 font-mono">
-                {filteredPlaybooks.length} playbooks disponibles
+                {filteredPlaybooks.length} {copy.availablePlaybooks}
               </div>
             </div>
           </div>
@@ -851,24 +1122,21 @@ const Playbooks: React.FC = () => {
           <div className="mb-10 grid gap-4 rounded-sm border border-slate-200 bg-white p-5 print:hidden md:grid-cols-2">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-                Parcours recommande
+                {copy.recommendedPath}
               </p>
-              <p className="mt-2 text-sm text-slate-600">
-                Besoin d un cadre complet avant execution ? Commencez par les guides piliers puis
-                ouvrez les playbooks relies.
-              </p>
+              <p className="mt-2 text-sm text-slate-600">{copy.recommendedBody}</p>
             </div>
             <div className="flex items-center justify-start gap-4 md:justify-end">
               <Link to={localizedPath('/guides')}>
                 <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
-                  Ouvrir les guides
+                  {copy.openGuides}
                 </Button>
               </Link>
               <Link
                 to={localizedPath('/analyses')}
                 className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
               >
-                Voir aussi les analyses
+                {copy.seeAnalyses}
               </Link>
             </div>
           </div>
@@ -877,7 +1145,7 @@ const Playbooks: React.FC = () => {
         {!isDetailRoute &&
           (filteredPlaybooks.length === 0 ? (
             <div className="rounded-sm border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 print:hidden">
-              Aucun playbook ne correspond a ces filtres.
+              {copy.noResults}
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
@@ -891,7 +1159,7 @@ const Playbooks: React.FC = () => {
                     type="button"
                     onClick={() => openPlaybook(playbook)}
                     className="group relative flex flex-col overflow-hidden rounded-sm border border-slate-200 bg-white text-left shadow-panel transition-all duration-300 hover:border-brand-steel hover:shadow-panel-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-steel"
-                    aria-label={`Ouvrir le playbook ${playbook.title}`}
+                    aria-label={`${copy.openPlaybookAria} ${playbook.title}`}
                   >
                     <div
                       className={`h-1 w-full ${getSeverityStripeClass(playbook.severity)}`}
@@ -900,7 +1168,7 @@ const Playbooks: React.FC = () => {
                     <div className="p-6 flex-grow flex flex-col">
                       <div className="flex justify-between items-start mb-4">
                         <Badge color={getSeverityColor(playbook.severity)}>
-                          {playbook.severity}
+                          {localizePlaybookSeverity(playbook.severity, locale)}
                         </Badge>
                         <span className="font-mono text-[10px] text-slate-400">{playbook.id}</span>
                       </div>
@@ -918,16 +1186,16 @@ const Playbooks: React.FC = () => {
                           <Clock size={10} /> {estimatedTime}
                         </span>
                         <span className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded-sm">
-                          <Gauge size={10} /> {difficulty}
+                          <Gauge size={10} /> {localizePlaybookDifficulty(difficulty, locale)}
                         </span>
                       </div>
 
                       <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
                         <span className="text-xs text-slate-500 font-medium">
-                          {playbook.steps.length} Etapes
+                          {playbook.steps.length} {copy.steps}
                         </span>
                         <div className="flex items-center gap-1 text-brand-steel font-bold text-xs uppercase group-hover:translate-x-1 transition-transform">
-                          Ouvrir <ArrowRight size={14} />
+                          {copy.open} <ArrowRight size={14} />
                         </div>
                       </div>
                     </div>
@@ -949,42 +1217,46 @@ const Playbooks: React.FC = () => {
               <div className="hidden print:block mb-4 border-b-2 border-black pb-3">
                 <h1 className="text-3xl font-bold uppercase">{selectedPlaybook.title}</h1>
                 <p className="text-sm font-mono mt-2">
-                  REF: {selectedPlaybook.id} | SEVERITE: {selectedPlaybook.severity} | CYBER GUIDE
+                  {copy.printHeaderRef}: {selectedPlaybook.id} | {copy.printHeaderSeverity}:{' '}
+                  {localizePlaybookSeverity(selectedPlaybook.severity, locale)} | CYBER GUIDE
                 </p>
               </div>
 
               {selectedPlaybook.operationalBrief && (
                 <section className="playbook-print-summary hidden print:block border border-black p-3 text-[11px] leading-relaxed">
                   <p className="playbook-copy">
-                    <strong>Contexte:</strong> {selectedPlaybook.operationalBrief.context}
+                    <strong>{copy.context}:</strong> {selectedPlaybook.operationalBrief.context}
                   </p>
                   <p className="playbook-copy mt-1">
-                    <strong>Objectif:</strong> {selectedPlaybook.operationalBrief.objective}
+                    <strong>{copy.objective}:</strong> {selectedPlaybook.operationalBrief.objective}
                   </p>
                   <p className="playbook-copy mt-1">
-                    <strong>Risque metier:</strong> {selectedPlaybook.operationalBrief.businessRisk}
+                    <strong>{copy.businessRisk}:</strong>{' '}
+                    {selectedPlaybook.operationalBrief.businessRisk}
                   </p>
                 </section>
               )}
 
               <section className="hidden print:grid grid-cols-2 gap-2 text-[11px] border border-black p-2">
                 <p>
-                  <strong>Categorie:</strong> {selectedPlaybook.category}
+                  <strong>{copy.category}:</strong>{' '}
+                  {localizePlaybookCategory(selectedPlaybook.category, locale)}
                 </p>
                 <p>
-                  <strong>Difficulte:</strong> {selectedPlaybook.difficulty ?? '—'}
+                  <strong>{copy.difficulty}:</strong>{' '}
+                  {localizePlaybookDifficulty(selectedPlaybook.difficulty ?? '—', locale)}
                 </p>
                 <p>
-                  <strong>Temps estime:</strong> {selectedPlaybook.estimatedTime ?? '—'}
+                  <strong>{copy.estimatedTime}:</strong> {selectedPlaybook.estimatedTime ?? '—'}
                 </p>
                 <p>
-                  <strong>Etapes:</strong> {selectedPlaybook.steps.length}
+                  <strong>{copy.steps}:</strong> {selectedPlaybook.steps.length}
                 </p>
               </section>
 
               <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
                 <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={closePlaybook}>
-                  Retour a la liste
+                  {copy.backToList}
                 </Button>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -993,10 +1265,10 @@ const Playbooks: React.FC = () => {
                     icon={PlayCircle}
                     onClick={() => setIsRunMode((previous) => !previous)}
                   >
-                    {isRunMode ? 'Mode execution actif' : 'Mode execution'}
+                    {isRunMode ? copy.runModeActive : copy.runMode}
                   </Button>
                   <Button variant="outline" size="sm" icon={Printer} onClick={handlePrint}>
-                    Imprimer
+                    {copy.print}
                   </Button>
                 </div>
               </div>
@@ -1004,11 +1276,17 @@ const Playbooks: React.FC = () => {
               <div className="print:hidden">
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge color={getSeverityColor(selectedPlaybook.severity)}>
-                    Severite: {selectedPlaybook.severity}
+                    {copy.severity}: {localizePlaybookSeverity(selectedPlaybook.severity, locale)}
                   </Badge>
-                  <Badge color="navy">{selectedPlaybook.category}</Badge>
-                  <Badge color="mono">{selectedPlaybook.difficulty ?? '—'}</Badge>
-                  <Badge color="mono">Temps estime: {selectedPlaybook.estimatedTime ?? '—'}</Badge>
+                  <Badge color="navy">
+                    {localizePlaybookCategory(selectedPlaybook.category, locale)}
+                  </Badge>
+                  <Badge color="mono">
+                    {localizePlaybookDifficulty(selectedPlaybook.difficulty ?? '—', locale)}
+                  </Badge>
+                  <Badge color="mono">
+                    {copy.estimatedTime}: {selectedPlaybook.estimatedTime ?? '—'}
+                  </Badge>
                 </div>
                 <h2 className="text-3xl font-display font-bold text-brand-navy mb-4">
                   {selectedPlaybook.title}
@@ -1023,10 +1301,10 @@ const Playbooks: React.FC = () => {
                   <div className="border-b border-slate-200 bg-gradient-to-r from-brand-pale/50 via-white to-brand-pale/30 px-6 py-4 print:bg-white print:border-black">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-brand-navy print:text-black">
-                        Carnet operationnel
+                        {copy.operationalNotebook}
                       </h3>
                       <span className="rounded-sm border border-slate-300 bg-white px-2 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-500 print:border-black print:text-black">
-                        Format guide terrain
+                        {copy.fieldGuideFormat}
                       </span>
                     </div>
                   </div>
@@ -1034,26 +1312,26 @@ const Playbooks: React.FC = () => {
                   <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] print:grid-cols-1">
                     <aside className="border-b border-slate-200 bg-brand-navy px-5 py-5 text-brand-pale lg:border-b-0 lg:border-r lg:border-r-white/10 print:hidden">
                       <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.2em] text-brand-light">
-                        Sommaire
+                        {copy.summary}
                       </p>
                       <ol className="space-y-2 text-xs">
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 01 - Contexte
+                          {copy.chapter} 01 - {copy.context}
                         </li>
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 02 - Objectif
+                          {copy.chapter} 02 - {copy.objective}
                         </li>
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 03 - Risque metier
+                          {copy.chapter} 03 - {copy.businessRisk}
                         </li>
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 04 - Verifications cles
+                          {copy.chapter} 04 - {copy.keyChecks}
                         </li>
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 05 - Criteres d escalade
+                          {copy.chapter} 05 - {copy.escalationCriteria}
                         </li>
                         <li className="rounded-sm border border-white/10 bg-white/5 px-2 py-1">
-                          Chapitre 06 - Coordination
+                          {copy.chapter} 06 - {copy.export.coordination}
                         </li>
                       </ol>
                     </aside>
@@ -1061,10 +1339,10 @@ const Playbooks: React.FC = () => {
                     <div className="space-y-4 p-5">
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 01
+                          {copy.chapter} 01
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Contexte
+                          {copy.context}
                         </h4>
                         <p className="playbook-copy text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.context}
@@ -1073,10 +1351,10 @@ const Playbooks: React.FC = () => {
 
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 02
+                          {copy.chapter} 02
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Objectif
+                          {copy.objective}
                         </h4>
                         <p className="playbook-copy text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.objective}
@@ -1085,10 +1363,10 @@ const Playbooks: React.FC = () => {
 
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 03
+                          {copy.chapter} 03
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Risque metier
+                          {copy.businessRisk}
                         </h4>
                         <p className="playbook-copy text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.businessRisk}
@@ -1097,10 +1375,10 @@ const Playbooks: React.FC = () => {
 
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 04
+                          {copy.chapter} 04
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Verifications cles
+                          {copy.keyChecks}
                         </h4>
                         <ul className="space-y-2 text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.keyChecks.map((item) => (
@@ -1114,10 +1392,10 @@ const Playbooks: React.FC = () => {
 
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 05
+                          {copy.chapter} 05
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Criteres d escalade
+                          {copy.escalationCriteria}
                         </h4>
                         <ul className="space-y-2 text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.escalationSignals.map((item) => (
@@ -1131,10 +1409,10 @@ const Playbooks: React.FC = () => {
 
                       <article className="rounded-sm border border-slate-200 bg-slate-50/50 p-5 print:border-black print:bg-white">
                         <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 print:text-black">
-                          Chapitre 06
+                          {copy.chapter} 06
                         </p>
                         <h4 className="mb-2 text-base font-bold uppercase tracking-wide text-brand-navy print:text-black">
-                          Coordination
+                          {copy.export.coordination}
                         </h4>
                         <ul className="space-y-2 text-base leading-relaxed text-slate-700 print:text-black">
                           {selectedPlaybook.operationalBrief.handoffTo.map((item) => (
@@ -1153,7 +1431,7 @@ const Playbooks: React.FC = () => {
               {relatedAnalyses.length > 0 && (
                 <section className="print:hidden rounded-sm border border-slate-200 bg-white p-5">
                   <h3 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                    <Link2 size={14} className="text-brand-steel" /> Analyses liees
+                    <Link2 size={14} className="text-brand-steel" /> {copy.linkedAnalyses}
                   </h3>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {relatedAnalyses.map((analysis) => (
@@ -1173,10 +1451,10 @@ const Playbooks: React.FC = () => {
                 <section className="playbook-run-panel print:hidden rounded-sm border border-brand-steel/30 bg-brand-pale/20 p-5">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-brand-navy">
-                      Mode execution incident
+                      {copy.runModeIncident}
                     </h3>
                     <Badge color="steel">
-                      {completedStepsCount}/{selectedPlaybook.steps.length} etapes
+                      {completedStepsCount}/{selectedPlaybook.steps.length} {copy.steps}
                     </Badge>
                   </div>
 
@@ -1188,17 +1466,21 @@ const Playbooks: React.FC = () => {
                   </div>
 
                   <div className="mb-4 grid gap-2 text-xs font-mono text-slate-500 sm:grid-cols-2">
-                    <span>Debut: {formatTimestamp(activeRunState.startedAt)}</span>
-                    <span>Derniere MAJ: {formatTimestamp(activeRunState.updatedAt)}</span>
+                    <span>
+                      {copy.startedAt}: {formatTimestamp(activeRunState.startedAt, uiLocale)}
+                    </span>
+                    <span>
+                      {copy.updatedAt}: {formatTimestamp(activeRunState.updatedAt, uiLocale)}
+                    </span>
                   </div>
 
                   <div className="mb-4 space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-                      Notes d incident
+                      {copy.export.incidentNotes}
                     </label>
                     <textarea
                       className="playbook-input min-h-[96px] w-full max-w-full rounded-sm border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-700 outline-none focus:border-brand-steel"
-                      placeholder="Contexte, hypotheses, decisions, escalades..."
+                      placeholder={copy.notesPlaceholder}
                       value={activeRunState.notesGlobal}
                       onChange={(event) => updateGlobalNotes(event.target.value)}
                       wrap="soft"
@@ -1212,10 +1494,10 @@ const Playbooks: React.FC = () => {
                       icon={ClipboardCheck}
                       onClick={generateExport}
                     >
-                      Exporter
+                      {isEnglish ? 'Export' : 'Exporter'}
                     </Button>
                     <Button variant="outline" size="sm" icon={Copy} onClick={copyExport}>
-                      Copier l export
+                      {copy.copyExport}
                     </Button>
                     <Button
                       variant="outline"
@@ -1223,17 +1505,17 @@ const Playbooks: React.FC = () => {
                       icon={Download}
                       onClick={downloadExportFile}
                     >
-                      Telecharger .md
+                      {copy.downloadMd}
                     </Button>
                     <Button variant="ghost" size="sm" icon={RotateCcw} onClick={resetRunState}>
-                      Reinitialiser
+                      {copy.reset}
                     </Button>
                   </div>
 
                   {generatedExport && (
                     <div className="mt-4 space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-                        Apercu export Markdown
+                        {isEnglish ? 'Markdown preview' : 'Aperçu export Markdown'}
                       </label>
                       <textarea
                         readOnly
@@ -1253,7 +1535,7 @@ const Playbooks: React.FC = () => {
                 <div className="playbook-section bg-slate-50 p-4 rounded-sm border border-slate-200 print:bg-white print:border-black">
                   <h4 className="font-bold text-brand-navy uppercase text-xs tracking-wider mb-3 flex items-center gap-2 print:text-black">
                     <AlertOctagon size={14} className="text-brand-alert print:hidden" />
-                    Declencheurs
+                    {copy.triggerSection}
                   </h4>
                   <ul className="space-y-2">
                     {selectedPlaybook.triggers.map((trigger) => (
@@ -1269,7 +1551,8 @@ const Playbooks: React.FC = () => {
                 </div>
                 <div className="playbook-section bg-slate-50 p-4 rounded-sm border border-slate-200 print:bg-white print:border-black">
                   <h4 className="font-bold text-brand-navy uppercase text-xs tracking-wider mb-3 flex items-center gap-2 print:text-black">
-                    <Shield size={14} className="text-brand-steel print:hidden" /> Pre-requis
+                    <Shield size={14} className="text-brand-steel print:hidden" />{' '}
+                    {copy.prerequisitesSection}
                   </h4>
                   <ul className="space-y-2">
                     {selectedPlaybook.prerequisites.map((prerequisite) => (
@@ -1287,7 +1570,8 @@ const Playbooks: React.FC = () => {
 
               <div>
                 <h3 className="text-xl font-bold text-brand-navy mb-6 flex items-center gap-2 print:text-black print:text-lg print:border-b print:border-black print:pb-2">
-                  <CheckSquare className="text-brand-steel print:hidden" /> Procedure Operationnelle
+                  <CheckSquare className="text-brand-steel print:hidden" />{' '}
+                  {isEnglish ? 'Operational procedure' : 'Procédure opérationnelle'}
                 </h3>
                 <div className="space-y-6 print:space-y-4">
                   {selectedPlaybook.steps.map((step, index) => {
@@ -1316,7 +1600,13 @@ const Playbooks: React.FC = () => {
                                   checked={isChecked}
                                   onChange={() => toggleStep(step.id)}
                                 />
-                                {isChecked ? 'Termine' : 'A faire'}
+                                {isChecked
+                                  ? isEnglish
+                                    ? 'Done'
+                                    : 'Terminé'
+                                  : isEnglish
+                                    ? 'To do'
+                                    : 'À faire'}
                               </label>
                             )}
                           </div>
@@ -1331,7 +1621,9 @@ const Playbooks: React.FC = () => {
                                 size={18}
                                 className="flex-shrink-0 mt-0.5 print:hidden"
                               />
-                              <span className="playbook-copy">ATTENTION: {step.warning}</span>
+                              <span className="playbook-copy">
+                                {copy.export.warning.toUpperCase()}: {step.warning}
+                              </span>
                             </div>
                           )}
 
@@ -1344,12 +1636,12 @@ const Playbooks: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    copyToClipboard(step.command ?? '', 'Commande copiee ✅')
+                                    copyToClipboard(step.command ?? '', copy.commandCopied)
                                   }
                                   className="inline-flex items-center gap-1 rounded-sm border border-slate-700 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 transition-colors hover:border-brand-steel hover:text-white"
-                                  aria-label={`Copier la commande de l'etape ${index + 1}`}
+                                  aria-label={`${copy.copyCommandAria} ${index + 1}`}
                                 >
-                                  <Copy size={12} /> Copier
+                                  <Copy size={12} /> {copy.copyCommand}
                                 </button>
                               </div>
                               <code className="playbook-code text-white print:text-black">
@@ -1361,13 +1653,17 @@ const Playbooks: React.FC = () => {
                           {isRunMode && activeRunState && (
                             <div className="mt-4 border-t border-slate-100 pt-3 space-y-2 print:hidden">
                               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                Note etape
+                                {copy.stepNote}
                               </label>
                               <textarea
                                 className="playbook-input min-h-[74px] w-full max-w-full rounded-sm border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700 outline-none focus:border-brand-steel focus:bg-white"
                                 value={activeRunState.notesByStep[step.id] ?? ''}
                                 onChange={(event) => updateStepNotes(step.id, event.target.value)}
-                                placeholder="Observations, artefacts trouves, decisions prises..."
+                                placeholder={
+                                  isEnglish
+                                    ? 'Observations, found artifacts, decisions taken...'
+                                    : 'Observations, artefacts trouves, decisions prises...'
+                                }
                                 wrap="soft"
                               />
                             </div>
@@ -1381,7 +1677,7 @@ const Playbooks: React.FC = () => {
 
               <div className="playbook-section bg-brand-pale/30 p-4 border border-brand-steel/20 rounded-sm print:bg-white print:border-black print:mt-4">
                 <h4 className="font-bold text-brand-navy uppercase text-xs tracking-wider mb-2 print:text-black">
-                  Preuves a collecter (Artifacts)
+                  {copy.artifactsToCollect}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedPlaybook.artifacts.map((artifact) => (
@@ -1400,8 +1696,8 @@ const Playbooks: React.FC = () => {
                 selectedPlaybook.messageTemplates.length > 0 && (
                   <div className="print:hidden">
                     <h3 className="text-xl font-bold text-brand-navy mb-6 flex items-center gap-2 print:text-black print:mt-6 print:border-b print:border-black">
-                      <MessageSquare className="text-brand-gold print:hidden" /> Templates de
-                      communication
+                      <MessageSquare className="text-brand-gold print:hidden" />{' '}
+                      {copy.messageTemplates}
                     </h3>
                     <div className="grid gap-4">
                       {selectedPlaybook.messageTemplates.map((template, index) => (
@@ -1411,25 +1707,25 @@ const Playbooks: React.FC = () => {
                         >
                           <div className="flex justify-between items-start mb-2 gap-3">
                             <Badge color="gold" className="print:border-black print:text-black">
-                              Pour: {template.audience}
+                              {isEnglish ? 'For' : 'Pour'}: {template.audience}
                             </Badge>
                             <button
                               type="button"
                               onClick={() =>
                                 copyToClipboard(
-                                  `Sujet: ${template.subject}\n\n${template.body}`,
-                                  'Template copie ✅',
+                                  `${isEnglish ? 'Subject' : 'Sujet'}: ${template.subject}\n\n${template.body}`,
+                                  copy.templateCopied,
                                 )
                               }
                               className="text-slate-400 hover:text-brand-steel print:hidden"
-                              title="Copier"
-                              aria-label={`Copier le template ${template.audience}`}
+                              title={copy.copyCommand}
+                              aria-label={`${copy.copyCommand} ${template.audience}`}
                             >
                               <Copy size={16} />
                             </button>
                           </div>
                           <div className="text-sm font-bold text-slate-800 mb-2">
-                            Sujet: {template.subject}
+                            {isEnglish ? 'Subject' : 'Sujet'}: {template.subject}
                           </div>
                           <div className="p-3 bg-slate-50 text-sm text-slate-600 font-mono border-l-2 border-slate-300 whitespace-pre-wrap print:bg-white print:text-black print:border-black">
                             {template.body}
@@ -1442,7 +1738,7 @@ const Playbooks: React.FC = () => {
 
               <div className="playbook-section bg-emerald-50 border border-emerald-200 p-6 rounded-sm print:bg-white print:border-black print:mt-3">
                 <h4 className="font-bold text-emerald-800 uppercase text-xs tracking-wider mb-4 flex items-center gap-2 print:text-black">
-                  <CheckSquare size={16} className="print:hidden" /> Definition of Done (Cloture)
+                  <CheckSquare size={16} className="print:hidden" /> {copy.definitionOfDone}
                 </h4>
                 <ul className="grid md:grid-cols-2 gap-3">
                   {selectedPlaybook.definitionOfDone.map((item) => (
@@ -1461,7 +1757,7 @@ const Playbooks: React.FC = () => {
 
               <div className="flex justify-center pt-8 print:hidden">
                 <Button variant="outline" icon={Printer} onClick={handlePrint}>
-                  Imprimer le Playbook
+                  {copy.printPlaybook}
                 </Button>
               </div>
             </div>

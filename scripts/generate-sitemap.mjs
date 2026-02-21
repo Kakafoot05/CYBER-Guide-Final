@@ -3,6 +3,11 @@ import { resolve } from 'node:path';
 
 const DEFAULT_SITE_URL = 'https://cyber-guide.fr';
 const ROOT = process.cwd();
+const FR_TO_EN_PATH_MAP = {
+  '/projets': '/projects',
+  '/outils': '/tools',
+  '/a-propos': '/about',
+};
 
 const dataFile = resolve(ROOT, 'data.ts');
 const guidesFile = resolve(ROOT, 'guides.ts');
@@ -50,7 +55,6 @@ const guidesSection = extractSection(
   'export const guides',
   'export const getGuideBySlug',
 );
-const blogSection = extractSection(dataContent, 'export const blogPosts');
 const templatesSection = extractSection(
   dataContent,
   'export const templates',
@@ -73,15 +77,6 @@ const guideEntries = [
   lastmod: isIsoDate(match[2]) ? match[2] : today,
 }));
 
-const blogEntries = [
-  ...blogSection.matchAll(
-    /slug:\s*'([^']+)'[\s\S]*?publishedDate:\s*'([^']+)'(?:[\s\S]*?updatedDate:\s*'([^']+)')?/g,
-  ),
-].map((match) => ({
-  slug: match[1],
-  lastmod: isIsoDate(match[3]) ? match[3] : isIsoDate(match[2]) ? match[2] : today,
-}));
-
 const templateEntries = [
   ...templatesSection.matchAll(/id:\s*'([^']+)'[\s\S]*?updatedAt:\s*'([^']+)'/g),
 ]
@@ -99,15 +94,11 @@ const guidesLastmod = maxDate(
   guideEntries.map((item) => item.lastmod),
   today,
 );
-const blogLastmod = maxDate(
-  blogEntries.map((item) => item.lastmod),
-  today,
-);
 const templatesLastmod = maxDate(
   templateEntries.map((item) => item.lastmod),
   today,
 );
-const siteLastmod = maxDate([analysesLastmod, guidesLastmod, blogLastmod, templatesLastmod], today);
+const siteLastmod = maxDate([analysesLastmod, guidesLastmod, templatesLastmod], today);
 
 const staticEntries = [
   { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: siteLastmod },
@@ -117,7 +108,6 @@ const staticEntries = [
   { path: '/templates', changefreq: 'weekly', priority: '0.8', lastmod: templatesLastmod },
   { path: '/projets', changefreq: 'weekly', priority: '0.8', lastmod: analysesLastmod },
   { path: '/sources', changefreq: 'weekly', priority: '0.7', lastmod: siteLastmod },
-  { path: '/blog', changefreq: 'weekly', priority: '0.7', lastmod: blogLastmod },
   { path: '/a-propos', changefreq: 'monthly', priority: '0.6', lastmod: siteLastmod },
   { path: '/contact', changefreq: 'monthly', priority: '0.6', lastmod: siteLastmod },
 ];
@@ -135,12 +125,6 @@ const dynamicEntries = [
     priority: '0.8',
     lastmod: entry.lastmod,
   })),
-  ...blogEntries.map((entry) => ({
-    path: `/blog/${entry.slug}`,
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastmod: entry.lastmod,
-  })),
   ...templateEntries.map((entry) => ({
     path: `/templates/${entry.id}`,
     changefreq: 'monthly',
@@ -149,7 +133,10 @@ const dynamicEntries = [
   })),
 ];
 
-const toEnglishPath = (path) => (path === '/' ? '/en' : `/en${path}`);
+const toEnglishPath = (path) => {
+  const englishPath = FR_TO_EN_PATH_MAP[path] ?? path;
+  return englishPath === '/' ? '/en' : `/en${englishPath}`;
+};
 
 const localizedEntries = [...staticEntries, ...dynamicEntries].flatMap((entry) => [
   entry,

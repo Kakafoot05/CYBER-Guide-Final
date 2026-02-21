@@ -3,16 +3,57 @@ import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, HelpCircle, Link2 } from 'lucide-react';
 import { Button, ShieldHeader, TechSeparator } from '../components/UI';
 import { Seo } from '../components/Seo';
-import { analyses, playbooks } from '../data';
-import { getGuideBySlug } from '../guides';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
+import { getLocalizedContent } from '../utils/contentLocale';
 
 const GuideDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const { analyses, playbooks, guides } = React.useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
-  const guide = getGuideBySlug(slug ?? '');
+  const guide = guides.find((item) => item.slug === (slug ?? ''));
+
+  const copy = isEnglish
+    ? {
+        breadcrumbHome: 'Home',
+        breadcrumbGuides: 'Guides',
+        guideSubtitle: 'Pillar Guide',
+        updatedMeta: 'UPDATED',
+        backToGuides: 'Back to guides',
+        overview: 'Overview',
+        actionableChecklist: 'Actionable checklist',
+        operationalFaq: 'Operational FAQ',
+        applyTitle: 'Apply this guide in practice',
+        applyBody:
+          'Use linked analyses and playbooks to convert this framework into a concrete execution plan.',
+        openAnalyses: 'Open analyses',
+        openPlaybooks: 'Open playbooks',
+        tableOfContents: 'Table of contents',
+        linkedAnalyses: 'Linked analyses',
+        linkedPlaybooks: 'Linked playbooks',
+        usefulLinks: 'Useful links',
+      }
+    : {
+        breadcrumbHome: 'Accueil',
+        breadcrumbGuides: 'Guides',
+        guideSubtitle: 'Guide Pilier',
+        updatedMeta: 'MÀJ',
+        backToGuides: 'Retour aux guides',
+        overview: "Vue d'ensemble",
+        actionableChecklist: 'Checklist actionnable',
+        operationalFaq: 'FAQ opérationnelle',
+        applyTitle: 'Appliquer ce guide en pratique',
+        applyBody:
+          "Utilisez les analyses et playbooks liés pour convertir ce cadre en plan d'exécution concret.",
+        openAnalyses: 'Ouvrir les analyses',
+        openPlaybooks: 'Ouvrir les playbooks',
+        tableOfContents: 'Sommaire',
+        linkedAnalyses: 'Analyses liées',
+        linkedPlaybooks: 'Playbooks liés',
+        usefulLinks: 'Liens utiles',
+      };
 
   if (!guide) {
     return <Navigate to={localizedPath('/guides')} replace />;
@@ -45,13 +86,13 @@ const GuideDetail: React.FC = () => {
               {
                 '@type': 'ListItem',
                 position: 1,
-                name: 'Accueil',
+                name: copy.breadcrumbHome,
                 item: 'https://cyber-guide.fr/',
               },
               {
                 '@type': 'ListItem',
                 position: 2,
-                name: 'Guides',
+                name: copy.breadcrumbGuides,
                 item: 'https://cyber-guide.fr/guides',
               },
               {
@@ -92,8 +133,8 @@ const GuideDetail: React.FC = () => {
 
       <ShieldHeader
         title={guide.title}
-        subtitle="Guide Pilier"
-        meta={[guide.category, `MAJ ${guide.updatedDate}`, guide.readTime]}
+        subtitle={copy.guideSubtitle}
+        meta={[guide.category, `${copy.updatedMeta} ${guide.updatedDate}`, guide.readTime]}
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -101,15 +142,13 @@ const GuideDetail: React.FC = () => {
           to={localizedPath('/guides')}
           className="mb-8 inline-flex items-center text-xs font-mono uppercase tracking-widest text-slate-500 transition-colors hover:text-brand-steel"
         >
-          <ArrowLeft size={13} className="mr-2" /> Retour aux guides
+          <ArrowLeft size={13} className="mr-2" /> {copy.backToGuides}
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-12">
           <div className="space-y-10 lg:col-span-8">
             <section className="rounded-sm border border-slate-200 bg-white p-7 shadow-panel">
-              <h1 className="mb-4 text-2xl font-display font-bold text-brand-navy">
-                Vue d ensemble
-              </h1>
+              <h1 className="mb-4 text-2xl font-display font-bold text-brand-navy">{copy.overview}</h1>
               <p className="text-sm leading-relaxed text-slate-700">{guide.intro}</p>
             </section>
 
@@ -134,7 +173,7 @@ const GuideDetail: React.FC = () => {
                   <div className="mt-6 border-t border-slate-100 pt-5">
                     <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
                       <CheckCircle2 size={14} className="text-brand-steel" />
-                      Checklist actionnable
+                      {copy.actionableChecklist}
                     </h3>
                     <ul className="space-y-2">
                       {section.checklist.map((item) => (
@@ -152,7 +191,7 @@ const GuideDetail: React.FC = () => {
             <section className="rounded-sm border border-slate-200 bg-white p-7 shadow-panel">
               <h2 className="mb-5 flex items-center gap-2 text-xl font-display font-bold text-brand-navy">
                 <HelpCircle size={20} className="text-brand-steel" />
-                FAQ operationnelle
+                {copy.operationalFaq}
               </h2>
               <div className="space-y-5">
                 {guide.faq.map((item) => (
@@ -170,22 +209,17 @@ const GuideDetail: React.FC = () => {
             <TechSeparator />
 
             <section className="rounded-sm border border-brand-steel/20 bg-brand-pale/35 p-7">
-              <h2 className="mb-3 text-lg font-display font-bold text-brand-navy">
-                Appliquer ce guide en pratique
-              </h2>
-              <p className="mb-5 text-sm text-slate-700">
-                Utilisez les analyses et playbooks lies pour convertir ce cadre en plan d execution
-                concret.
-              </p>
+              <h2 className="mb-3 text-lg font-display font-bold text-brand-navy">{copy.applyTitle}</h2>
+              <p className="mb-5 text-sm text-slate-700">{copy.applyBody}</p>
               <div className="flex flex-wrap gap-3">
                 <Link to={localizedPath('/analyses')}>
                   <Button as="span" variant="primary" size="sm" icon={ArrowRight}>
-                    Ouvrir les analyses
+                    {copy.openAnalyses}
                   </Button>
                 </Link>
                 <Link to={localizedPath('/playbooks')}>
                   <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
-                    Ouvrir les playbooks
+                    {copy.openPlaybooks}
                   </Button>
                 </Link>
               </div>
@@ -196,7 +230,7 @@ const GuideDetail: React.FC = () => {
             <div className="sticky top-28 space-y-6">
               <section className="rounded-sm border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-navy">
-                  Sommaire
+                  {copy.tableOfContents}
                 </h2>
                 <ul className="space-y-2 text-sm">
                   {guide.sections.map((section) => (
@@ -215,7 +249,7 @@ const GuideDetail: React.FC = () => {
               <section className="rounded-sm border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
                   <BookOpen size={14} className="text-brand-steel" />
-                  Analyses liees
+                  {copy.linkedAnalyses}
                 </h2>
                 <div className="space-y-2">
                   {relatedAnalyses.map((analysis) => (
@@ -233,7 +267,7 @@ const GuideDetail: React.FC = () => {
               <section className="rounded-sm border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
                   <BookOpen size={14} className="text-brand-steel" />
-                  Playbooks lies
+                  {copy.linkedPlaybooks}
                 </h2>
                 <div className="space-y-2">
                   {relatedPlaybooks.map((playbook) => (
@@ -251,7 +285,7 @@ const GuideDetail: React.FC = () => {
               <section className="rounded-sm border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-navy">
                   <Link2 size={14} className="text-brand-steel" />
-                  Liens utiles
+                  {copy.usefulLinks}
                 </h2>
                 <div className="space-y-2">
                   {guide.relatedLinks.map((item) => (

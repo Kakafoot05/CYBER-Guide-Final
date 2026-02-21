@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ShieldHeader,
@@ -10,97 +10,242 @@ import {
   TechBadge,
   type BadgeColor,
 } from '../components/UI';
-import { tools, softwares } from '../data';
+import { getLocalizedContent } from '../utils/contentLocale';
 import {
-  IncidentReportIcon,
-  LogInvestigatorIcon,
-  PhishingTriageIcon,
-  GenericToolIcon,
-} from '../components/icons/VendorLogos';
-import {
-  Play,
-  RotateCcw,
-  Activity,
-  FileJson,
-  Table as TableIcon,
-  AlertTriangle,
-  Clock,
-  Terminal,
   Search,
   Monitor,
   Github,
   ExternalLink,
-  Layers,
   ArrowRight,
+  Printer,
 } from 'lucide-react';
-import type { Tool, Software } from '../types';
+import type { Software } from '../types';
 import { Seo } from '../components/Seo';
 import { buildLocalizedPath, getLocaleFromPathname } from '../utils/locale';
-
-// MAPPING ID -> ICONE CUSTOM
-type LogoComponent = React.ComponentType<{ className?: string; size?: number }>;
-
-const TOOL_LOGOS: Record<string, LogoComponent> = {
-  t1: IncidentReportIcon,
-  t2: LogInvestigatorIcon,
-  t3: PhishingTriageIcon,
-};
+import { localizeSoftwareLicense } from '../utils/labels';
 
 type SoftwareLicense = Software['license'];
 type LicenseFilter = 'All' | SoftwareLicense;
 
-const LICENSE_LABELS: Record<SoftwareLicense, string> = {
-  'Open Source': 'Open Source',
-  Free: 'Gratuit',
-  Paid: 'Logiciel proprietaire',
-  Freemium: 'Freemium',
+type BudgetStackPlan = {
+  id: string;
+  title: string;
+  budgetRange: string;
+  targetTeam: string;
+  fit: string;
+  objective: string;
+  softwareIds: string[];
+  deliverables: string[];
+  limitations: string[];
 };
 
-const getLicenseLabel = (license: SoftwareLicense): string => LICENSE_LABELS[license];
+const getBudgetStackPlans = (locale: 'fr' | 'en'): BudgetStackPlan[] => {
+  if (locale === 'en') {
+    return [
+      {
+        id: 'starter',
+        title: 'Starter defensive baseline',
+        budgetRange: '0EUR - 400EUR / month',
+        targetTeam: 'IT team (1-3 people)',
+        fit: 'Small companies up to 150 users',
+        objective: 'Secure identity, remote access, and basic security visibility.',
+        softwareIds: ['soft-12', 'soft-13', 'soft-08', 'soft-05'],
+        deliverables: [
+          'Admin MFA and shared secret vault in production use.',
+          'Centralized logs for VPN, email, and privileged authentication.',
+          'Weekly vulnerability and internet-exposure review.',
+        ],
+        limitations: [
+          'No 24/7 SOC coverage.',
+          'Detection depth remains moderate without SIEM tuning ownership.',
+        ],
+      },
+      {
+        id: 'growth',
+        title: 'Growth stack for SOC operations',
+        budgetRange: '400EUR - 2,500EUR / month',
+        targetTeam: 'IT + SecOps (3-8 people)',
+        fit: 'Growing organizations and multi-site operations',
+        objective: 'Build proactive detection and structured incident response operations.',
+        softwareIds: ['soft-03', 'soft-07', 'soft-09', 'soft-11', 'soft-13'],
+        deliverables: [
+          'Operational detections on identity, endpoint, and perimeter events.',
+          'Weekly security dashboard for management and IT.',
+          'Monthly tabletop simulation with remediation tracking.',
+        ],
+        limitations: [
+          'Requires dedicated ownership for detection tuning and false positives.',
+          'Needs clear escalation workflow to perform during crisis.',
+        ],
+      },
+      {
+        id: 'soc-plus',
+        title: 'SOC+ enterprise stack',
+        budgetRange: '2,500EUR+ / month',
+        targetTeam: 'Dedicated SOC / CERT',
+        fit: 'Critical services, regulated sectors, high internet exposure',
+        objective: 'Reduce detection and containment time on critical assets.',
+        softwareIds: ['soft-02', 'soft-10', 'soft-11', 'soft-12', 'soft-01'],
+        deliverables: [
+          'Continuous monitoring with high-priority playbooks.',
+          'Formal incident reporting for leadership and compliance.',
+          'Service-level objectives on detection and containment times.',
+        ],
+        limitations: [
+          'Tool value depends on process discipline and analyst maturity.',
+          'Budget must include training, IR exercises, and governance.',
+        ],
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'starter',
+      title: 'Socle defensif Starter',
+      budgetRange: '0EUR - 400EUR / mois',
+      targetTeam: 'Equipe IT (1-3 personnes)',
+      fit: 'PME jusqu a 150 utilisateurs',
+      objective: 'Securiser identite, acces distant et visibilite securite de base.',
+      softwareIds: ['soft-12', 'soft-13', 'soft-08', 'soft-05'],
+      deliverables: [
+        'MFA admin active et coffre de secrets partage en production.',
+        'Centralisation logs VPN, email et authentification privilegiee.',
+        'Revue hebdomadaire des vulnerabilites et services exposes.',
+      ],
+      limitations: [
+        'Pas de couverture SOC 24/7.',
+        'Detection limitee sans ressource dediee au tuning.',
+      ],
+    },
+    {
+      id: 'growth',
+      title: 'Stack Croissance orientee SOC',
+      budgetRange: '400EUR - 2 500EUR / mois',
+      targetTeam: 'IT + SecOps (3-8 personnes)',
+      fit: 'Organisations en croissance et multi-sites',
+      objective: 'Passer a une detection proactive et une reponse incident structuree.',
+      softwareIds: ['soft-03', 'soft-07', 'soft-09', 'soft-11', 'soft-13'],
+      deliverables: [
+        'Regles de detection operationnelles identite, endpoint et perimetre.',
+        'Tableau de bord securite hebdomadaire pour direction et IT.',
+        'Exercice de crise mensuel avec suivi des remediations.',
+      ],
+      limitations: [
+        'Necessite un responsable dedie au tuning et faux positifs.',
+        'Demande un workflow escalation/communication bien defini.',
+      ],
+    },
+    {
+      id: 'soc-plus',
+      title: 'Stack Entreprise SOC+',
+      budgetRange: '2 500EUR+ / mois',
+      targetTeam: 'SOC / CERT dedie',
+      fit: 'Services critiques, secteurs regules, forte exposition internet',
+      objective: 'Reduire les temps de detection et confinement sur actifs critiques.',
+      softwareIds: ['soft-02', 'soft-10', 'soft-11', 'soft-12', 'soft-01'],
+      deliverables: [
+        'Surveillance continue avec playbooks haute priorite.',
+        'Reporting incident formalise pour direction et conformite.',
+        'Objectifs de performance detection et confinement.',
+      ],
+      limitations: [
+        'La valeur outil depend fortement de la discipline process.',
+        'Le budget doit couvrir formation, exercices IR et gouvernance.',
+      ],
+    },
+  ];
+};
+
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 // --- SECTION STACK ECOSYSTEM ---
 const STACK_GROUPS = [
   {
     id: 'siem',
-    title: 'SIEM & Logs',
-    focus: 'Detection, correlation, investigation',
+    title: {
+      fr: 'SIEM & Logs',
+      en: 'SIEM & Logs',
+    },
+    focus: {
+      fr: 'Détection, corrélation, investigation',
+      en: 'Detection, correlation, investigation',
+    },
     members: ['Splunk Enterprise Security', 'Elastic Security', 'OpenSearch', 'Graylog'],
   },
   {
     id: 'perimeter',
-    title: 'Perimetre',
-    focus: 'Filtrage, edge, acces distant',
+    title: {
+      fr: 'Périmètre',
+      en: 'Perimeter',
+    },
+    focus: {
+      fr: 'Filtrage, edge, accès distant',
+      en: 'Filtering, edge, remote access',
+    },
     members: ['FortiGate', 'Palo Alto NGFW', 'Cloudflare', 'OpenVPN'],
   },
   {
     id: 'identity',
-    title: 'Identite',
-    focus: 'MFA, IAM, secrets',
+    title: {
+      fr: 'Identité',
+      en: 'Identity',
+    },
+    focus: {
+      fr: 'MFA, IAM, secrets',
+      en: 'MFA, IAM, secrets',
+    },
     members: ['Okta', 'Bitwarden', 'KeePassXC'],
   },
   {
     id: 'visibility',
-    title: 'Visibilite',
-    focus: 'Reseau et observabilite',
+    title: {
+      fr: 'Visibilité',
+      en: 'Visibility',
+    },
+    focus: {
+      fr: 'Réseau et observabilité',
+      en: 'Network and observability',
+    },
     members: ['Wireshark', 'Grafana', 'Kibana'],
   },
 ] as const;
 
-const StackEcosystem: React.FC = () => {
+const StackEcosystem: React.FC<{ softwares: Software[]; locale: 'fr' | 'en' }> = ({
+  softwares,
+  locale,
+}) => {
+  const isEnglish = locale === 'en';
+  const copy = isEnglish
+    ? {
+        title: 'Software ecosystem',
+        body:
+          'Selection of tools used in operational cybersecurity workflows: prevention, detection, investigation, and remediation.',
+      }
+    : {
+        title: 'Écosystème logiciels',
+        body:
+          "Sélection d'outils utilisés dans des parcours de cybersécurité opérationnelle : prévention, détection, investigation et remédiation.",
+      };
   const softwareByName = useMemo(
     () => new Map(softwares.map((software) => [software.name, software] as const)),
-    [],
+    [softwares],
   );
 
   return (
     <div className="mb-16 animate-fade-in-up">
       <div className="mb-8 text-center">
         <h3 className="mb-2 text-sm font-bold uppercase tracking-widest text-brand-navy">
-          Ecosysteme logiciels
+          {copy.title}
         </h3>
         <p className="mx-auto max-w-3xl text-sm text-slate-600">
-          Selection d'outils utilises dans des parcours cybersécurité operationnelle: prevention,
-          detection, investigation et remediations.
+          {copy.body}
         </p>
         <div className="mx-auto mt-3 h-0.5 w-12 bg-brand-steel"></div>
       </div>
@@ -113,9 +258,9 @@ const StackEcosystem: React.FC = () => {
           >
             <div className="mb-4 border-b border-slate-100 pb-3">
               <h4 className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-                {group.title}
+                {group.title[locale]}
               </h4>
-              <p className="mt-1 text-xs text-slate-500">{group.focus}</p>
+              <p className="mt-1 text-xs text-slate-500">{group.focus[locale]}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -148,7 +293,7 @@ const StackEcosystem: React.FC = () => {
                     <div className="min-w-0">
                       <p className="truncate text-[11px] font-medium text-slate-700">{software.name}</p>
                       <p className="truncate text-[10px] text-slate-400">
-                        {getLicenseLabel(software.license)}
+                        {localizeSoftwareLicense(software.license, locale)}
                       </p>
                     </div>
                   </div>
@@ -162,229 +307,562 @@ const StackEcosystem: React.FC = () => {
   );
 };
 
-const ToolDemo: React.FC<{ tool: Tool }> = ({ tool }) => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [hasRun, setHasRun] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current);
+const BudgetStackSection: React.FC<{
+  softwares: Software[];
+  locale: 'fr' | 'en';
+  localizedPath: (path: string) => string;
+}> = ({ softwares, locale, localizedPath }) => {
+  const isEnglish = locale === 'en';
+  const copy = isEnglish
+    ? {
+        title: 'Recommended stack by budget',
+        subtitle:
+          'Concrete stack packs aligned to budget, team size, and operational objective.',
+        budget: 'Monthly budget',
+        team: 'Target team',
+        fit: 'Best fit',
+        objective: 'Operational objective',
+        softwares: 'Recommended software',
+        deliverables: 'Minimum deliverables',
+        limits: 'Practical limits',
+        compareLabel: 'Compare',
+        compareHint: 'Select 2 stacks for side-by-side comparison.',
+        compareTitle: 'Stack comparison',
+        compareEmpty: 'Select two stacks to display comparison.',
+        sharedTools: 'Common software',
+        onlyInStack: 'Specific to this stack',
+        exportComparisonPdf: 'Export comparison PDF',
+        exportDisabled: 'Select 2 stacks first',
+        exportReady: 'Print dialog opened ✅',
+        exportFailed: 'Cannot prepare PDF export',
+        openTemplates: 'Open incident templates',
+        openGuides: 'Open guide tracks',
       }
-    };
-  }, []);
+    : {
+        title: 'Stack recommandee par budget',
+        subtitle:
+          'Packs concrets alignes sur budget, taille equipe et objectif operationnel.',
+        budget: 'Budget mensuel',
+        team: 'Equipe cible',
+        fit: 'Adapte a',
+        objective: 'Objectif operationnel',
+        softwares: 'Logiciels recommandes',
+        deliverables: 'Livrables minimum',
+        limits: 'Limites pratiques',
+        compareLabel: 'Comparer',
+        compareHint: 'Selectionnez 2 stacks pour un comparatif cote a cote.',
+        compareTitle: 'Comparatif des stacks',
+        compareEmpty: 'Selectionnez deux stacks pour afficher le comparatif.',
+        sharedTools: 'Logiciels communs',
+        onlyInStack: 'Specifique a cette stack',
+        exportComparisonPdf: 'Exporter comparatif PDF',
+        exportDisabled: 'Selectionnez 2 stacks',
+        exportReady: 'Fenetre impression ouverte ✅',
+        exportFailed: "Impossible de preparer l'export PDF",
+        openTemplates: 'Ouvrir les templates incident',
+        openGuides: 'Ouvrir les parcours guides',
+      };
 
-  const handleRun = () => {
-    if (timeoutRef.current !== null) {
-      window.clearTimeout(timeoutRef.current);
+  const stackPlans = useMemo(() => getBudgetStackPlans(locale), [locale]);
+  const softwareById = useMemo(
+    () => new Map(softwares.map((software) => [software.id, software] as const)),
+    [softwares],
+  );
+  const [comparisonSelection, setComparisonSelection] = useState<string[]>(() =>
+    stackPlans.slice(0, 2).map((plan) => plan.id),
+  );
+  const [comparisonToast, setComparisonToast] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setComparisonSelection((currentSelection) => {
+      const validSelection = currentSelection.filter((id) =>
+        stackPlans.some((plan) => plan.id === id),
+      );
+
+      if (validSelection.length >= 2) {
+        return validSelection.slice(0, 2);
+      }
+
+      const fallbackIds = stackPlans
+        .map((plan) => plan.id)
+        .filter((id) => !validSelection.includes(id));
+
+      return [...validSelection, ...fallbackIds].slice(0, 2);
+    });
+  }, [stackPlans]);
+
+  const togglePlanSelection = (planId: string) => {
+    setComparisonSelection((currentSelection) => {
+      if (currentSelection.includes(planId)) {
+        return currentSelection.filter((id) => id !== planId);
+      }
+
+      if (currentSelection.length < 2) {
+        return [...currentSelection, planId];
+      }
+
+      return [currentSelection[1], planId];
+    });
+  };
+
+  const selectedPlans = comparisonSelection
+    .map((id) => stackPlans.find((plan) => plan.id === id))
+    .filter((plan): plan is BudgetStackPlan => Boolean(plan));
+
+  const sharedSoftwareIds =
+    selectedPlans.length === 2
+      ? selectedPlans[0].softwareIds.filter((softwareId) =>
+          selectedPlans[1].softwareIds.includes(softwareId),
+        )
+      : [];
+
+  const showComparisonToast = (message: string) => {
+    setComparisonToast(message);
+    window.setTimeout(() => setComparisonToast((current) => (current === message ? null : current)), 2200);
+  };
+
+  const exportComparisonPdf = () => {
+    if (selectedPlans.length < 2) {
+      showComparisonToast(copy.exportDisabled);
+      return;
     }
-    setIsRunning(true);
-    setHasRun(false);
-    timeoutRef.current = window.setTimeout(() => {
-      setIsRunning(false);
-      setHasRun(true);
-      timeoutRef.current = null;
-    }, 1500);
-  };
 
-  const handleReset = () => {
-    setHasRun(false);
-    setIsRunning(false);
-  };
+    const comparisonDate = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'fr-FR', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    }).format(new Date());
 
-  const ToolLogo = TOOL_LOGOS[tool.id] ?? GenericToolIcon;
+    const toSoftwareNames = (softwareIds: string[]): string[] =>
+      softwareIds
+        .map((softwareId) => softwareById.get(softwareId)?.name)
+        .filter((name): name is string => Boolean(name));
 
-  return (
-    <BlueprintPanel
-      className="mb-12 group hover:border-brand-steel transition-colors duration-300"
-      label={`MODULE: ${tool.id}`}
-    >
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Description Side */}
-        <div>
-          {/* TOOL HEADER WITH CUSTOM LOGO */}
-          <div className="flex items-start gap-5 mb-6">
-            <div className="p-3 bg-brand-navy text-white rounded-sm shadow-md group-hover:bg-brand-steel transition-colors duration-300 flex-shrink-0">
-              <ToolLogo size={48} />
-            </div>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h3 className="text-2xl font-display font-bold text-brand-navy">{tool.name}</h3>
-                <Badge
-                  color={tool.status.toLowerCase().includes('demo') ? 'success' : 'mono'}
-                  className="hidden sm:inline-flex"
-                >
-                  {tool.status}
-                </Badge>
-              </div>
-              <p className="text-slate-500 font-mono text-xs uppercase tracking-wide">
-                Cellule {tool.category}
-              </p>
-            </div>
-          </div>
+    const planA = selectedPlans[0];
+    const planB = selectedPlans[1];
+    const specificA = toSoftwareNames(planA.softwareIds.filter((id) => !sharedSoftwareIds.includes(id)));
+    const specificB = toSoftwareNames(planB.softwareIds.filter((id) => !sharedSoftwareIds.includes(id)));
+    const shared = toSoftwareNames(sharedSoftwareIds);
 
-          <p className="text-slate-600 mb-8 leading-relaxed text-sm lg:text-base border-l-2 border-slate-100 pl-4">
-            {tool.description}
-          </p>
+    const listToHtml = (items: string[], emptyFallback = '-') =>
+      items.length === 0
+        ? `<li>${escapeHtml(emptyFallback)}</li>`
+        : items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
 
-          <div className="mb-8">
-            <h4 className="text-xs font-bold text-brand-navy uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Activity size={14} className="text-brand-steel" /> Capacites
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {tool.features.map((f) => (
-                <span
-                  key={f}
-                  className="px-3 py-1 bg-slate-50 text-slate-600 text-xs rounded-sm border border-slate-200 font-medium font-mono"
-                >
-                  {f}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <Button
-              onClick={handleRun}
-              disabled={isRunning}
-              icon={Play}
-              variant="primary"
-              className="shadow-lg shadow-brand-steel/10"
-            >
-              {isRunning ? 'Simulation en cours...' : 'Lancer le module'}
-            </Button>
-            {hasRun && (
-              <Button onClick={handleReset} variant="ghost" icon={RotateCcw}>
-                Reinitialiser
-              </Button>
-            )}
-          </div>
+    const printableHtml = `<!doctype html>
+<html lang="${locale}">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(copy.compareTitle)} - Cyber Guide</title>
+    <style>
+      :root { color-scheme: light; }
+      body { margin: 0; background: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; }
+      .sheet { max-width: 980px; margin: 16px auto; background: #ffffff; border: 1px solid #d8dee8; }
+      .header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+      .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .2em; color: #64748b; font-weight: 700; }
+      .title { margin: 6px 0 2px; font-size: 32px; line-height: 1.1; color: #0b2a5a; font-weight: 800; }
+      .meta { font-size: 12px; color: #475569; }
+      .grid { display: grid; gap: 14px; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 20px 24px; }
+      .card { border: 1px solid #d8dee8; background: #ffffff; padding: 14px; }
+      .card h3 { margin: 0 0 8px; font-size: 20px; color: #0b2a5a; }
+      .kv { margin: 8px 0; font-size: 13px; }
+      .kv strong { color: #334155; text-transform: uppercase; letter-spacing: .08em; font-size: 10px; margin-right: 6px; }
+      .section { border: 1px solid #d8dee8; margin: 0 24px 12px; padding: 14px; background: #f8fafc; }
+      .section h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: #334155; }
+      ul { margin: 0; padding-left: 18px; }
+      li { margin: 4px 0; font-size: 13px; line-height: 1.45; }
+      .footer { padding: 12px 24px 20px; font-size: 11px; color: #64748b; }
+      @page { size: A4; margin: 10mm; }
+      @media print {
+        body { background: #fff; }
+        .sheet { border: 0; margin: 0; max-width: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="header">
+        <div class="eyebrow">Cyber Guide - Software strategy</div>
+        <div class="title">${escapeHtml(copy.compareTitle)}</div>
+        <div class="meta">${escapeHtml(comparisonDate)}</div>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h3>${escapeHtml(planA.title)}</h3>
+          <div class="kv"><strong>${escapeHtml(copy.budget)}</strong> ${escapeHtml(planA.budgetRange)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.team)}</strong> ${escapeHtml(planA.targetTeam)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.fit)}</strong> ${escapeHtml(planA.fit)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.objective)}</strong> ${escapeHtml(planA.objective)}</div>
         </div>
-
-        {/* Visualisation Side */}
-        <div className="bg-slate-50 border border-slate-200 rounded-sm p-1 min-h-[350px] flex flex-col relative overflow-hidden shadow-inner">
-          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between z-10 relative">
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-              <Terminal size={12} className="text-brand-steel" />
-              <span>FLUX_RESULTATS</span>
-            </div>
-            <div className="flex gap-2">
-              <FileJson size={14} className="text-slate-300" />
-              <TableIcon size={14} className="text-slate-300" />
-            </div>
-          </div>
-
-          <div className="p-4 flex-grow font-mono text-sm overflow-auto relative bg-slate-50/50">
-            {/* IDLE STATE */}
-            {!isRunning && !hasRun && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 opacity-60">
-                <ToolLogo size={64} className="text-slate-300 mb-4 opacity-50" />
-                <p className="text-xs uppercase tracking-widest">En attente de donnees...</p>
-              </div>
-            )}
-
-            {/* LOADING STATE */}
-            {isRunning && (
-              <div className="space-y-3 animate-pulse pt-4">
-                <div className="flex items-center gap-2 text-xs text-brand-steel font-bold">
-                  <Activity size={12} className="animate-spin" /> TRAITEMENT...
-                </div>
-                <div className="h-1.5 bg-slate-200 rounded w-3/4"></div>
-                <div className="h-1.5 bg-slate-200 rounded w-1/2"></div>
-                <div className="h-1.5 bg-slate-200 rounded w-5/6"></div>
-                <div className="pt-4 border-t border-slate-100">
-                  <div className="h-20 bg-slate-100 rounded border border-slate-200"></div>
-                </div>
-              </div>
-            )}
-
-            {/* FINISHED STATE */}
-            {hasRun && (
-              <div className="animate-fade-in-up">
-                {tool.id === 't1' && (
-                  <div className="space-y-4">
-                    <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-sm">
-                      <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-3">
-                        <div>
-                          <div className="text-[10px] font-mono text-slate-400 uppercase">
-                            Incident
-                          </div>
-                          <div className="font-bold text-brand-navy">IR-2026-X89</div>
-                        </div>
-                        <Badge color="alert">CRITIQUE</Badge>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <div className="text-[10px] font-bold text-brand-navy uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <Clock size={10} /> Chronologie
-                          </div>
-                          <div className="border-l-2 border-slate-200 ml-1.5 pl-3 space-y-3">
-                            <div className="relative">
-                              <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-slate-300"></div>
-                              <div className="text-[10px] text-slate-400">10:42 UTC</div>
-                              <div className="text-xs text-slate-700">Acces initial (phishing)</div>
-                            </div>
-                            <div className="relative">
-                              <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-red-400 animate-pulse"></div>
-                              <div className="text-[10px] text-slate-400">10:45 UTC</div>
-                              <div className="text-xs text-slate-700 font-bold">
-                                Execution PowerShell
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {tool.id === 't2' && (
-                  <div className="flex flex-col h-full">
-                    <div className="flex-grow bg-slate-900 rounded-sm overflow-hidden text-[10px] font-mono leading-relaxed shadow-inner border border-slate-700 p-2 text-slate-300">
-                      <div className="opacity-50">Logon Success | User: SYSTEM</div>
-                      <div className="text-red-400 font-bold my-1">
-                        {'>>>'} ALERT: Brute Force Detect (Count: 52)
-                      </div>
-                      <div className="opacity-50">Logon Failed | User: Admin</div>
-                    </div>
-                    <div className="mt-2 p-2 bg-white border border-slate-200 text-xs text-slate-600 rounded-sm">
-                      <strong>Analyse:</strong> motif d'attaque confirme.
-                    </div>
-                  </div>
-                )}
-
-                {tool.id === 't3' && (
-                  <div className="space-y-4">
-                    <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-sm flex items-start gap-3">
-                      <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block text-xs uppercase tracking-wide mb-1">
-                          Verdict : malveillant
-                        </strong>
-                        <span className="text-xs">Phishing detecte avec forte confiance.</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center text-xs text-slate-400 mt-2 px-1">
-                      <span>Moteur: heuristiques statiques</span>
-                      <span className="font-bold text-brand-navy">Score de risque: 98/100</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        <div class="card">
+          <h3>${escapeHtml(planB.title)}</h3>
+          <div class="kv"><strong>${escapeHtml(copy.budget)}</strong> ${escapeHtml(planB.budgetRange)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.team)}</strong> ${escapeHtml(planB.targetTeam)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.fit)}</strong> ${escapeHtml(planB.fit)}</div>
+          <div class="kv"><strong>${escapeHtml(copy.objective)}</strong> ${escapeHtml(planB.objective)}</div>
         </div>
       </div>
-    </BlueprintPanel>
+      <div class="section">
+        <h4>${escapeHtml(copy.sharedTools)}</h4>
+        <ul>${listToHtml(shared)}</ul>
+      </div>
+      <div class="grid">
+        <div class="section" style="margin:0;">
+          <h4>${escapeHtml(planA.title)} - ${escapeHtml(copy.onlyInStack)}</h4>
+          <ul>${listToHtml(specificA)}</ul>
+        </div>
+        <div class="section" style="margin:0;">
+          <h4>${escapeHtml(planB.title)} - ${escapeHtml(copy.onlyInStack)}</h4>
+          <ul>${listToHtml(specificB)}</ul>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="section" style="margin:0;">
+          <h4>${escapeHtml(planA.title)} - ${escapeHtml(copy.deliverables)}</h4>
+          <ul>${listToHtml(planA.deliverables)}</ul>
+        </div>
+        <div class="section" style="margin:0;">
+          <h4>${escapeHtml(planB.title)} - ${escapeHtml(copy.deliverables)}</h4>
+          <ul>${listToHtml(planB.deliverables)}</ul>
+        </div>
+      </div>
+      <div class="footer">cyber-guide.fr</div>
+    </div>
+  </body>
+</html>`;
+
+    const frame = document.createElement('iframe');
+    frame.style.position = 'fixed';
+    frame.style.right = '0';
+    frame.style.bottom = '0';
+    frame.style.width = '0';
+    frame.style.height = '0';
+    frame.style.border = '0';
+    frame.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(frame);
+
+    const cleanup = () => {
+      if (frame.parentNode) {
+        frame.parentNode.removeChild(frame);
+      }
+    };
+
+    try {
+      const frameWindow = frame.contentWindow;
+      if (!frameWindow) {
+        cleanup();
+        showComparisonToast(copy.exportFailed);
+        return;
+      }
+      const frameDocument = frameWindow.document;
+      frameDocument.open();
+      frameDocument.write(printableHtml);
+      frameDocument.close();
+
+      let printTriggered = false;
+      const triggerPrint = () => {
+        if (printTriggered) return;
+        printTriggered = true;
+        frameWindow.focus();
+        frameWindow.print();
+      };
+
+      frameWindow.addEventListener('afterprint', () => window.setTimeout(cleanup, 200), {
+        once: true,
+      });
+      window.setTimeout(triggerPrint, 220);
+      window.setTimeout(cleanup, 15000);
+      showComparisonToast(copy.exportReady);
+    } catch {
+      cleanup();
+      showComparisonToast(copy.exportFailed);
+    }
+  };
+
+  return (
+    <div className="mb-12 animate-fade-in-up">
+      <div className="mb-8 text-center">
+        <h3 className="mb-2 text-sm font-bold uppercase tracking-widest text-brand-navy">
+          {copy.title}
+        </h3>
+        <p className="mx-auto max-w-3xl text-sm text-slate-600">{copy.subtitle}</p>
+        <p className="mx-auto mt-2 max-w-3xl text-[11px] font-mono uppercase tracking-wide text-slate-500">
+          {copy.compareHint}
+        </p>
+        <div className="mx-auto mt-3 h-0.5 w-12 bg-brand-steel"></div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-3">
+        {stackPlans.map((plan) => (
+          <BlueprintPanel key={plan.id} className="h-full border-slate-200" label={`STACK_${plan.id.toUpperCase()}`}>
+                <div className="mb-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-lg font-display font-bold text-brand-navy">{plan.title}</h4>
+                    <button
+                      type="button"
+                      onClick={() => togglePlanSelection(plan.id)}
+                      className={`rounded-sm border px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition-colors ${
+                        comparisonSelection.includes(plan.id)
+                          ? 'border-brand-steel bg-brand-navy text-white'
+                          : 'border-slate-200 bg-white text-slate-500 hover:border-brand-steel hover:text-brand-navy'
+                      }`}
+                    >
+                      {copy.compareLabel}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">{plan.objective}</p>
+                </div>
+
+            <div className="grid gap-2 rounded-sm border border-slate-200 bg-white p-3 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono uppercase tracking-wider text-slate-500">{copy.budget}</span>
+                <span className="text-right font-semibold text-brand-navy">{plan.budgetRange}</span>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono uppercase tracking-wider text-slate-500">{copy.team}</span>
+                <span className="text-right font-semibold text-brand-navy">{plan.targetTeam}</span>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono uppercase tracking-wider text-slate-500">{copy.fit}</span>
+                <span className="text-right font-semibold text-brand-navy">{plan.fit}</span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                {copy.softwares}
+              </p>
+              <div className="mt-2 space-y-2">
+                {plan.softwareIds.map((softwareId) => {
+                  const software = softwareById.get(softwareId);
+                  if (!software) return null;
+
+                  return (
+                    <a
+                      key={`${plan.id}-${software.id}`}
+                      href={software.officialUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex items-center gap-2 rounded-sm border border-slate-200 bg-white p-2 transition-colors hover:border-brand-steel"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-slate-100 bg-slate-50 p-1">
+                        {software.logoPath ? (
+                          <img
+                            src={software.logoPath}
+                            alt={`Logo ${software.name}`}
+                            className="max-h-full max-w-full object-contain"
+                            width={20}
+                            height={20}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-600">
+                            {software.name.slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-brand-navy">{software.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-[10px] text-slate-500">{software.category}</p>
+                          <Badge color="mono" className="!px-1.5 !py-0 text-[8px]">
+                            {localizeSoftwareLicense(software.license, locale)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                {copy.deliverables}
+              </p>
+              <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                {plan.deliverables.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-4 rounded-sm border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                {copy.limits}
+              </p>
+              <ul className="mt-2 space-y-2 text-xs text-slate-600">
+                {plan.limitations.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-gold"></span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </BlueprintPanel>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        <BlueprintPanel title={copy.compareTitle} label="COMPARE_2_STACKS">
+          <div className="mb-4 flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Printer}
+              onClick={exportComparisonPdf}
+              disabled={selectedPlans.length < 2}
+            >
+              {copy.exportComparisonPdf}
+            </Button>
+          </div>
+
+          {selectedPlans.length < 2 ? (
+            <p className="rounded-sm border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+              {copy.compareEmpty}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                {selectedPlans.map((plan) => {
+                  const specificSoftwareIds = plan.softwareIds.filter(
+                    (softwareId) => !sharedSoftwareIds.includes(softwareId),
+                  );
+
+                  return (
+                    <div key={`compare-${plan.id}`} className="rounded-sm border border-slate-200 bg-white p-4">
+                      <h4 className="text-lg font-display font-bold text-brand-navy">{plan.title}</h4>
+                      <div className="mt-3 grid gap-2 rounded-sm border border-slate-200 bg-slate-50 p-3 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono uppercase tracking-wider text-slate-500">
+                            {copy.budget}
+                          </span>
+                          <span className="text-right font-semibold text-brand-navy">{plan.budgetRange}</span>
+                        </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono uppercase tracking-wider text-slate-500">
+                            {copy.team}
+                          </span>
+                          <span className="text-right font-semibold text-brand-navy">{plan.targetTeam}</span>
+                        </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono uppercase tracking-wider text-slate-500">
+                            {copy.fit}
+                          </span>
+                          <span className="text-right font-semibold text-brand-navy">{plan.fit}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                          {copy.onlyInStack}
+                        </p>
+                        <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                          {specificSoftwareIds.map((softwareId) => {
+                            const software = softwareById.get(softwareId);
+                            if (!software) return null;
+                            return (
+                              <li key={`${plan.id}-specific-${softwareId}`} className="flex items-start gap-2">
+                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                                <span>{software.name}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                          {copy.deliverables}
+                        </p>
+                        <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                          {plan.deliverables.slice(0, 3).map((item) => (
+                            <li key={`${plan.id}-deliverable-${item}`} className="flex items-start gap-2">
+                              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-steel"></span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                  {copy.sharedTools}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {sharedSoftwareIds.length === 0 ? (
+                    <span className="text-xs text-slate-500">-</span>
+                  ) : (
+                    sharedSoftwareIds.map((softwareId) => {
+                      const software = softwareById.get(softwareId);
+                      if (!software) return null;
+                      return (
+                        <span
+                          key={`shared-${softwareId}`}
+                          className="rounded-sm border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-brand-navy"
+                        >
+                          {software.name}
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {comparisonToast ? (
+            <div className="mt-4 rounded-sm border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-brand-navy">
+              {comparisonToast}
+            </div>
+          ) : null}
+        </BlueprintPanel>
+      </div>
+
+      <div className="mt-8 flex flex-col justify-center gap-3 text-center sm:flex-row">
+        <Link to={localizedPath('/templates')}>
+          <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
+            {copy.openTemplates}
+          </Button>
+        </Link>
+        <Link to={localizedPath('/guides')}>
+          <Button as="span" variant="outline" size="sm" icon={ArrowRight}>
+            {copy.openGuides}
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 };
 
 // --- COMPOSANT : CARTE LOGICIEL ---
-const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
+const SoftwareCard: React.FC<{ software: Software; onClick: () => void; locale: 'fr' | 'en' }> = ({
   software,
   onClick,
+  locale,
 }) => {
+  const isEnglish = locale === 'en';
+  const copy = isEnglish
+    ? {
+        openSoftwareAria: 'Open software details',
+        vendor: 'Vendor',
+        useCase: 'Use case',
+        viewDetails: 'View details',
+      }
+    : {
+        openSoftwareAria: 'Ouvrir les détails du logiciel',
+        vendor: 'Éditeur',
+        useCase: "Cas d'usage",
+        viewDetails: 'Voir détails',
+      };
   const getLicenseColor = (lic: string): BadgeColor => {
     if (lic === 'Open Source') return 'success';
     if (lic === 'Paid') return 'navy';
@@ -397,7 +875,7 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
       type="button"
       onClick={onClick}
       className="h-full w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-steel"
-      aria-label={`Ouvrir les détails du logiciel ${software.name}`}
+      aria-label={`${copy.openSoftwareAria} ${software.name}`}
     >
       <BlueprintPanel className="h-full flex flex-col hover:border-brand-steel transition-colors group">
         <div className="flex justify-between items-start mb-4">
@@ -427,13 +905,13 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
               </div>
             </div>
           <Badge color={getLicenseColor(software.license)} className="text-[9px]">
-            {getLicenseLabel(software.license)}
+            {localizeSoftwareLicense(software.license, locale)}
           </Badge>
         </div>
 
         {software.vendor && (
           <p className="mb-2 text-[10px] font-mono uppercase tracking-wide text-slate-400">
-            Editeur: {software.vendor}
+            {copy.vendor}: {software.vendor}
           </p>
         )}
 
@@ -443,7 +921,7 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
 
         {software.useCases.length > 0 && (
           <p className="mb-4 text-xs text-slate-500">
-            Cas d'usage: <span className="font-medium text-slate-600">{software.useCases[0]}</span>
+            {copy.useCase}: <span className="font-medium text-slate-600">{software.useCases[0]}</span>
           </p>
         )}
 
@@ -476,7 +954,7 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
 
         <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between gap-2">
           <span className="text-xs font-bold text-brand-steel group-hover:underline">
-            Voir details
+            {copy.viewDetails}
           </span>
           <ArrowRight size={14} className="text-brand-steel transition-transform group-hover:translate-x-1" />
         </div>
@@ -489,9 +967,89 @@ const SoftwareCard: React.FC<{ software: Software; onClick: () => void }> = ({
 const Tools: React.FC = () => {
   const location = useLocation();
   const locale = getLocaleFromPathname(location.pathname);
+  const isEnglish = locale === 'en';
+  const { softwares } = useMemo(() => getLocalizedContent(locale), [locale]);
   const localizedPath = (path: string): string => buildLocalizedPath(path, locale);
+  const copy = isEnglish
+    ? {
+        seoTitle: 'Cyber Tools and Operational Software',
+        seoDescription:
+          'Catalog of defensive tools and operational cybersecurity software for triage, investigation, and incident response.',
+        seoKeywords: ['cyber tools', 'operational cybersecurity', 'DFIR', 'triage', 'investigation'],
+        schemaName: 'Cyber Guide Toolbox',
+        headerTitle: 'Toolbox',
+        headerSubtitle: 'Technical',
+        headerMeta: ['Local processing', 'Confidentiality', 'DFIR'],
+        meshTitle: 'Operational mapping',
+        meshBody:
+          'Use guides to frame priorities, templates to standardize communication, and this toolbox to execute.',
+        openGuides: 'Open guides',
+        seeTemplates: 'See templates too',
+        catalog: 'Catalog',
+        referenceSoftware: 'reference software',
+        openSourceNote: 'auditable and modular',
+        proprietary: 'Proprietary',
+        proprietaryNote: 'structured vendor support',
+        domains: 'Domains',
+        domainsNote: 'SIEM, IAM, network, observability',
+        search: 'Search',
+        searchPlaceholder: 'Name, vendor, use case, tag...',
+        category: 'Category',
+        all: 'All',
+        license: 'License',
+        platform: 'Platform',
+        selectedSoftware: 'selected software',
+        resetFilters: 'Reset filters',
+        emptyState: 'No software matches current filters.',
+        drawerTitlePrefix: 'SOFTWARE',
+        compatibility: 'Compatibility',
+        useCases: 'Priority use cases',
+        officialSite: 'Official site',
+        sourceCode: 'Source code',
+      }
+    : {
+        seoTitle: 'Outils Cyber et Logiciels Opérationnels',
+        seoDescription:
+          "Catalogue d'outils défensifs et logiciels cyber opérationnels pour le triage, l'investigation et la réponse à incident.",
+        seoKeywords: [
+          'outils cyber',
+          'cybersécurité opérationnelle',
+          'DFIR',
+          'triage',
+          'investigation',
+        ],
+        schemaName: 'Boîte à outils Cyber Guide',
+        headerTitle: 'Boîte à outils',
+        headerSubtitle: 'Technique',
+        headerMeta: ['Traitement local', 'Confidentialité', 'DFIR'],
+        meshTitle: 'Maillage opérationnel',
+        meshBody:
+          'Utilisez les guides pour cadrer les priorités, les templates pour standardiser la communication, et cette boîte à outils pour exécuter.',
+        openGuides: 'Ouvrir les guides',
+        seeTemplates: 'Voir aussi les templates',
+        catalog: 'Catalogue',
+        referenceSoftware: 'logiciels référencés',
+        openSourceNote: 'auditables et modulaires',
+        proprietary: 'Propriétaires',
+        proprietaryNote: 'support éditeur structuré',
+        domains: 'Domaines',
+        domainsNote: 'SIEM, IAM, Réseau, observabilité',
+        search: 'Recherche',
+        searchPlaceholder: 'Nom, éditeur, cas d’usage, tag...',
+        category: 'Catégorie',
+        all: 'Toutes',
+        license: 'Licence',
+        platform: 'Plateforme',
+        selectedSoftware: 'logiciels sélectionnés',
+        resetFilters: 'Réinitialiser les filtres',
+        emptyState: 'Aucun logiciel ne correspond aux filtres actuels.',
+        drawerTitlePrefix: 'LOGICIEL',
+        compatibility: 'Compatibilité',
+        useCases: "Cas d'usage prioritaires",
+        officialSite: 'Site Officiel',
+        sourceCode: 'Code Source',
+      };
 
-  const [activeTab, setActiveTab] = useState<'demos' | 'directory'>('demos');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [licenseFilter, setLicenseFilter] = useState<LicenseFilter>('All');
@@ -500,12 +1058,12 @@ const Tools: React.FC = () => {
 
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(softwares.map((s) => s.category))).sort()],
-    [],
+    [softwares],
   );
 
   const platforms = useMemo(
     () => ['All', ...Array.from(new Set(softwares.flatMap((s) => s.platforms))).sort()],
-    [],
+    [softwares],
   );
 
   const softwareMetrics = useMemo(
@@ -515,7 +1073,7 @@ const Tools: React.FC = () => {
       proprietary: softwares.filter((s) => s.license === 'Paid').length,
       categories: new Set(softwares.map((s) => s.category)).size,
     }),
-    [],
+    [softwares],
   );
 
   const filteredSoftwares = softwares.filter((s) => {
@@ -536,16 +1094,16 @@ const Tools: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
       <Seo
-        title="Outils Cyber et Logiciels Operationnels"
-        description="Catalogue d'outils defensifs: demos interactives, triage, investigation et selection de logiciels cyber."
+        title={copy.seoTitle}
+        description={copy.seoDescription}
         path="/outils"
         image="/assets/og/tools.svg"
-        keywords={['outils cyber', 'cybersecurite operationnelle', 'DFIR', 'triage', 'investigation']}
+        keywords={copy.seoKeywords}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: 'Boite a outils Cyber Guide',
-          url: 'https://cyber-guide.fr/outils',
+          name: copy.schemaName,
+          url: `https://cyber-guide.fr${localizedPath('/outils')}`,
           mainEntity: {
             '@type': 'ItemList',
             itemListElement: softwares.map((software, index) => ({
@@ -558,110 +1116,62 @@ const Tools: React.FC = () => {
         }}
       />
       <ShieldHeader
-        title="Boite a outils"
-        subtitle="Technique"
-        meta={['Traitement local', 'Confidentialite', 'DFIR']}
+        title={copy.headerTitle}
+        subtitle={copy.headerSubtitle}
+        meta={copy.headerMeta}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* TABS SWITCHER */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-white p-1 rounded-sm border border-slate-200 shadow-sm inline-flex">
-            <button
-              onClick={() => setActiveTab('demos')}
-              className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-all flex items-center gap-2 ${
-                activeTab === 'demos'
-                  ? 'bg-brand-navy text-white shadow-md'
-                  : 'text-slate-500 hover:text-brand-navy hover:bg-slate-50'
-              }`}
-            >
-              <Activity size={14} /> Demos interactives
-            </button>
-            <button
-              onClick={() => setActiveTab('directory')}
-              className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-all flex items-center gap-2 ${
-                activeTab === 'directory'
-                  ? 'bg-brand-navy text-white shadow-md'
-                  : 'text-slate-500 hover:text-brand-navy hover:bg-slate-50'
-              }`}
-            >
-              <Layers size={14} /> Logiciels & Outils
-            </button>
-          </div>
-        </div>
-
         <div className="mb-10 grid gap-4 rounded-sm border border-slate-200 bg-white p-5 md:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-brand-navy">
-              Maillage operationnel
+              {copy.meshTitle}
             </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Associez ces outils a un guide pilier pour cadrer les priorites puis a un template
-              pour execution.
-            </p>
+            <p className="mt-2 text-sm text-slate-600">{copy.meshBody}</p>
           </div>
           <div className="flex items-center justify-start gap-4 md:justify-end">
             <Link to={localizedPath('/guides')}>
-              <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
-                Ouvrir les guides
-              </Button>
-            </Link>
+                <Button as="span" variant="secondary" size="sm" icon={ArrowRight}>
+                {copy.openGuides}
+                </Button>
+              </Link>
             <Link
               to={localizedPath('/templates')}
               className="text-xs font-mono uppercase tracking-wide text-brand-steel hover:text-brand-navy transition-colors"
             >
-              Voir aussi les templates
+              {copy.seeTemplates}
             </Link>
           </div>
         </div>
 
-        {/* VIEW 1: MODULES INTERNES */}
-        {activeTab === 'demos' && (
-          <div className="max-w-5xl mx-auto animate-fade-in-up">
-            {/* NEW STACK SECTION */}
-            <StackEcosystem />
+        <StackEcosystem softwares={softwares} locale={locale} />
+        <BudgetStackSection softwares={softwares} locale={locale} localizedPath={localizedPath} />
 
-            {tools.map((tool) => (
-              <ToolDemo key={tool.id} tool={tool} />
-            ))}
-
-            <div className="mt-12 p-8 bg-brand-pale/30 border border-brand-steel/10 rounded-sm text-center">
-              <h4 className="text-brand-navy font-display font-bold mb-2">Plus d'outils a venir</h4>
-              <p className="text-slate-600 text-sm max-w-md mx-auto">
-                Nos modules de tri et d'analyse sont en developpement constant. Les outils de type
-                "cote client" garantissent que vos donnees ne quittent jamais votre navigateur.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW 2: LOGICIELS EXTERNES */}
-        {activeTab === 'directory' && (
-          <div className="animate-fade-in-up">
+        <div className="animate-fade-in-up">
             <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Catalogue</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{copy.catalog}</p>
                 <p className="mt-1 text-2xl font-bold text-brand-navy">{softwareMetrics.total}</p>
-                <p className="text-xs text-slate-500">logiciels références</p>
+                <p className="text-xs text-slate-500">{copy.referenceSoftware}</p>
               </article>
               <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
                   Open Source
                 </p>
                 <p className="mt-1 text-2xl font-bold text-emerald-700">{softwareMetrics.openSource}</p>
-                <p className="text-xs text-slate-500">auditables et modulaires</p>
+                <p className="text-xs text-slate-500">{copy.openSourceNote}</p>
               </article>
               <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                  Proprietaires
+                  {copy.proprietary}
                 </p>
                 <p className="mt-1 text-2xl font-bold text-brand-navy">{softwareMetrics.proprietary}</p>
-                <p className="text-xs text-slate-500">support éditeur structuré</p>
+                <p className="text-xs text-slate-500">{copy.proprietaryNote}</p>
               </article>
               <article className="rounded-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Domaines</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{copy.domains}</p>
                 <p className="mt-1 text-2xl font-bold text-brand-steel">{softwareMetrics.categories}</p>
-                <p className="text-xs text-slate-500">SIEM, IAM, Réseau, observabilité</p>
+                <p className="text-xs text-slate-500">{copy.domainsNote}</p>
               </article>
             </div>
 
@@ -669,7 +1179,7 @@ const Tools: React.FC = () => {
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="relative w-full md:col-span-2 xl:col-span-1">
                   <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                    Recherche
+                    {copy.search}
                   </label>
                   <div className="relative">
                     <Search
@@ -678,7 +1188,7 @@ const Tools: React.FC = () => {
                     />
                     <input
                       type="text"
-                      placeholder="Nom, editeur, cas d usage, tag..."
+                      placeholder={copy.searchPlaceholder}
                       className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -687,7 +1197,7 @@ const Tools: React.FC = () => {
                 </div>
                 <div className="w-full">
                   <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                    Categorie
+                    {copy.category}
                   </label>
                   <select
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
@@ -696,30 +1206,30 @@ const Tools: React.FC = () => {
                   >
                     {categories.map((c) => (
                       <option key={c} value={c}>
-                        {c === 'All' ? 'Toutes' : c}
+                        {c === 'All' ? copy.all : c}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="w-full">
                   <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                    Licence
+                    {copy.license}
                   </label>
                   <select
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
                     value={licenseFilter}
                     onChange={(e) => setLicenseFilter(e.target.value as LicenseFilter)}
                   >
-                    <option value="All">Toutes</option>
-                    <option value="Open Source">{getLicenseLabel('Open Source')}</option>
-                    <option value="Paid">{getLicenseLabel('Paid')}</option>
-                    <option value="Freemium">{getLicenseLabel('Freemium')}</option>
-                    <option value="Free">{getLicenseLabel('Free')}</option>
+                    <option value="All">{copy.all}</option>
+                    <option value="Open Source">{localizeSoftwareLicense('Open Source', locale)}</option>
+                    <option value="Paid">{localizeSoftwareLicense('Paid', locale)}</option>
+                    <option value="Freemium">{localizeSoftwareLicense('Freemium', locale)}</option>
+                    <option value="Free">{localizeSoftwareLicense('Free', locale)}</option>
                   </select>
                 </div>
                 <div className="w-full">
                   <label className="text-[10px] font-mono font-bold text-slate-500 uppercase mb-1 block">
-                    Plateforme
+                    {copy.platform}
                   </label>
                   <select
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-sm focus:border-brand-steel outline-none bg-white"
@@ -730,7 +1240,7 @@ const Tools: React.FC = () => {
                   >
                     {platforms.map((platform) => (
                       <option key={platform} value={platform}>
-                        {platform === 'All' ? 'Toutes' : platform}
+                        {platform === 'All' ? copy.all : platform}
                       </option>
                     ))}
                   </select>
@@ -738,8 +1248,7 @@ const Tools: React.FC = () => {
               </div>
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-xs font-mono uppercase tracking-wide text-slate-500">
-                  {filteredSoftwares.length} logiciel{filteredSoftwares.length > 1 ? 's' : ''}{' '}
-                  sélectionné{filteredSoftwares.length > 1 ? 's' : ''}
+                  {filteredSoftwares.length} {copy.selectedSoftware}
                 </p>
                 <button
                   type="button"
@@ -751,14 +1260,14 @@ const Tools: React.FC = () => {
                   }}
                   className="text-[10px] font-bold uppercase tracking-widest text-brand-steel hover:text-brand-navy"
                 >
-                  Reinitialiser les filtres
+                  {copy.resetFilters}
                 </button>
               </div>
             </div>
 
             {filteredSoftwares.length === 0 ? (
               <div className="rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-                Aucun logiciel ne correspond aux filtres actuels.
+                {copy.emptyState}
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -767,18 +1276,18 @@ const Tools: React.FC = () => {
                     key={soft.id}
                     software={soft}
                     onClick={() => setSelectedSoftware(soft)}
+                    locale={locale}
                   />
                 ))}
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {/* SOFTWARE DETAILS DRAWER */}
         <Drawer
           isOpen={!!selectedSoftware}
           onClose={() => setSelectedSoftware(null)}
-          title={selectedSoftware ? `LOGICIEL: ${selectedSoftware.id.toUpperCase()}` : ''}
+          title={selectedSoftware ? `${copy.drawerTitlePrefix}: ${selectedSoftware.id.toUpperCase()}` : ''}
         >
           {selectedSoftware && (
             <div className="space-y-8 pb-12">
@@ -804,7 +1313,7 @@ const Tools: React.FC = () => {
                   <div>
                     <Badge color="navy">{selectedSoftware.category}</Badge>
                     <Badge color="mono" className="ml-2">
-                      {getLicenseLabel(selectedSoftware.license)}
+                      {localizeSoftwareLicense(selectedSoftware.license, locale)}
                     </Badge>
                     {selectedSoftware.vendor && (
                       <p className="mt-1 text-[11px] font-mono uppercase text-slate-400">
@@ -824,7 +1333,7 @@ const Tools: React.FC = () => {
 
               <div>
                 <h4 className="font-bold text-brand-navy uppercase text-xs tracking-wider mb-4 flex items-center gap-2">
-                  <Monitor size={14} className="text-brand-steel" /> Compatibilite
+                  <Monitor size={14} className="text-brand-steel" /> {copy.compatibility}
                 </h4>
                 <div className="flex flex-wrap gap-3">
                   {selectedSoftware.platforms.map((p) => (
@@ -835,7 +1344,7 @@ const Tools: React.FC = () => {
 
               <div>
                 <h4 className="font-bold text-brand-navy uppercase text-xs tracking-wider mb-4">
-                  Cas d'usage prioritaires
+                  {copy.useCases}
                 </h4>
                 <ul className="space-y-2">
                   {selectedSoftware.useCases.map((useCase) => (
@@ -861,7 +1370,7 @@ const Tools: React.FC = () => {
                     size="lg"
                     icon={ExternalLink}
                   >
-                    Site Officiel
+                    {copy.officialSite}
                   </Button>
                 </a>
                 {selectedSoftware.repoUrl && (
@@ -877,7 +1386,7 @@ const Tools: React.FC = () => {
                       size="lg"
                       icon={Github}
                     >
-                      Code Source
+                      {copy.sourceCode}
                     </Button>
                   </a>
                 )}

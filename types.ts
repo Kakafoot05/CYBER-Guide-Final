@@ -81,7 +81,7 @@ export interface Tool {
   name: string;
   description: string;
   category: 'Investigation' | 'Reporting' | 'Triage' | 'Hardening';
-  status: 'Démo Live' | 'Prototype' | 'Production';
+  status: 'Pilote' | 'Prototype' | 'Production';
   features: string[];
 }
 
@@ -106,10 +106,20 @@ export interface Project {
   title: string;
   context: string;
   objective: string;
+  scope?: string;
   technologies: string[];
   result: string;
   link?: string;
   takeaways?: string[];
+  keyActions?: string[];
+  updatedDate?: string; // ISO-8601 date (YYYY-MM-DD)
+  sources?: ProjectSource[];
+}
+
+export interface ProjectSource {
+  name: string;
+  url: string;
+  note?: string;
 }
 
 // Structure détaillée pour un playbook opérationnel

@@ -43,7 +43,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://cyber-guide.fr/en/outils</loc>
+    <loc>https://cyber-guide.fr/en/tools</loc>
     <lastmod>2026-02-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -67,7 +67,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://cyber-guide.fr/en/projets</loc>
+    <loc>https://cyber-guide.fr/en/projects</loc>
     <lastmod>2026-02-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -85,25 +85,13 @@
     <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://cyber-guide.fr/blog</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/en/blog</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
     <loc>https://cyber-guide.fr/a-propos</loc>
     <lastmod>2026-02-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://cyber-guide.fr/en/a-propos</loc>
+    <loc>https://cyber-guide.fr/en/about</loc>
     <lastmod>2026-02-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
@@ -227,54 +215,6 @@
     <lastmod>2026-02-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/blog/post-mortem-phishing-2025</loc>
-    <lastmod>2025-10-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/en/blog/post-mortem-phishing-2025</loc>
-    <lastmod>2025-10-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/blog/checklist-triage-soc-15-min</loc>
-    <lastmod>2025-11-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/en/blog/checklist-triage-soc-15-min</loc>
-    <lastmod>2025-11-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/blog/nis2-par-ou-commencer-petite-equipe</loc>
-    <lastmod>2025-12-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/en/blog/nis2-par-ou-commencer-petite-equipe</loc>
-    <lastmod>2025-12-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/blog/mfa-fatigue-signaux-precoces</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://cyber-guide.fr/en/blog/mfa-fatigue-signaux-precoces</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://cyber-guide.fr/templates/tpl-001</loc>

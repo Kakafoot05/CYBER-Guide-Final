@@ -362,7 +362,7 @@ const baseAnalyses: Omit<Analysis, 'publishedDate' | 'updatedDate' | 'ogImage' |
       ],
       recommendations: [
         'Passer aux identités fédérées courtes durées pour jobs CI.',
-        'Scanner secrets en pre-commit, CI et historique Git.',
+        'Scanner les secrets en pré-commit, CI et historique Git.',
         'Signer artefacts et imposer validation provenance en déploiement.',
         'Segmenter runners par criticité et restreindre accès cloud minimal.',
       ],
@@ -390,7 +390,7 @@ const baseAnalyses: Omit<Analysis, 'publishedDate' | 'updatedDate' | 'ogImage' |
         'Le SOC corrèle-t-il événements Git, CI et cloud sur une même timeline ?',
       ],
       checklist: [
-        'Activer scans secrets pre-commit + CI + historique.',
+        'Activer les scans secrets pré-commit + CI + historique.',
         'Supprimer clés longues durées des pipelines prioritaires.',
         'Mettre en place signature des artefacts critiques.',
         'Restreindre permissions runners par projet et environnement.',
@@ -638,13 +638,13 @@ const analysisSeoProfiles: Record<
 const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
   'identite-mfa-fatigue': {
     context:
-      'Campagne de phishing et MFA fatigue ciblee sur comptes metier a forte valeur (finance, RH, support).',
+      'Campagne de phishing et MFA fatigue ciblée sur comptes métier à forte valeur (finance, RH, support).',
     attackChain: [
-      'Reconnaissance des utilisateurs exposes via OSINT et adresses publiques.',
-      'Phishing AiTM pour recuperer identifiants primaires et amorcer les prompts MFA.',
-      'Rafale de validations MFA push jusqu a acceptation par fatigue utilisateur.',
-      'Detournement de session web et creation de regles de forwarding inbox.',
-      'Persistance via consentement OAuth malveillant et reutilisation de token.',
+      'Reconnaissance des utilisateurs exposés via OSINT et adresses publiques.',
+      'Phishing AiTM pour récupérer les identifiants primaires et amorcer les prompts MFA.',
+      "Rafale de validations MFA push jusqu'à acceptation par fatigue utilisateur.",
+      'Détournement de session web et création de règles de forwarding inbox.',
+      'Persistance via consentement OAuth malveillant et réutilisation de token.',
     ],
     mitreMapping: [
       { id: 'T1566.002', name: 'Phishing: Spearphishing Link', tactic: 'Initial Access' },
@@ -663,72 +663,72 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       { id: 'T1528', name: 'Steal Application Access Token', tactic: 'Credential Access' },
     ],
     iocs: [
-      { type: 'Domain', value: 'microsoft-login-secure[.]com', note: 'Domaine AiTM defange.' },
+      { type: 'Domain', value: 'microsoft-login-secure[.]com', note: 'Domaine AiTM défangé.' },
       {
         type: 'URL',
         value: 'https://login-office365-verify[.]com/auth',
-        note: 'URL de collecte credential.',
+        note: "URL de collecte d'identifiants.",
       },
       {
         type: 'UserAgent',
         value: 'python-requests/2.31',
-        note: 'Agent atypique apres validation MFA.',
+        note: 'Agent atypique après validation MFA.',
       },
       {
         type: 'Email',
         value: 'security-verify@notice-update[.]com',
-        note: 'Expediteur de la vague phishing.',
+        note: 'Expéditeur de la vague phishing.',
       },
       {
         type: 'IP',
         value: '185.225.74[.]29',
-        note: 'IP recurrente dans les connexions anormales.',
+        note: 'IP récurrente dans les connexions anormales.',
       },
     ],
     detections: [
       {
-        title: 'Burst MFA fatigue suivi de connexion reussie',
+        title: 'Burst MFA fatigue suivi de connexion réussie',
         platform: 'KQL',
         query:
           "SigninLogs | summarize prompts=count() by UserPrincipalName, ResultType, bin(TimeGenerated, 5m) | where prompts >= 5 and ResultType in ('0','500121')",
-        rationale: 'Repere une sequence refus multiples puis succes sur fenetre courte.',
+        rationale: 'Repère une séquence de refus multiples puis succès sur fenêtre courte.',
       },
       {
-        title: 'Creation de forwarding inbox suspect',
+        title: 'Création de forwarding inbox suspect',
         platform: 'KQL',
         query:
           "OfficeActivity | where Operation in ('New-InboxRule','Set-InboxRule') | where Parameters has_any ('ForwardTo','RedirectTo','DeleteMessage')",
-        rationale: 'Detecte la persistance post-compromission la plus frequente sur M365.',
+        rationale: 'Détecte la persistance post-compromission la plus fréquente sur M365.',
       },
       {
-        title: 'OAuth consent non approuve',
+        title: 'OAuth consent non approuvé',
         platform: 'Sigma',
         query:
           'title: Suspicious OAuth Consent; logsource: product: m365; detection: selection.operation: Consent to application',
-        rationale: 'Alerte sur prise de controle durable via application tierce.',
+        rationale: 'Alerte sur prise de contrôle durable via application tierce.',
       },
     ],
     remediation: [
-      'Imposer Number Matching et MFA resistant phishing (FIDO2/WebAuthn) sur comptes sensibles.',
-      'Revoquer sessions, refresh tokens et consentements OAuth lors de tout incident identite.',
+      'Imposer Number Matching et MFA résistante au phishing (FIDO2/WebAuthn) sur comptes sensibles.',
+      'Révoquer sessions, refresh tokens et consentements OAuth lors de tout incident identité.',
       'Bloquer forwarding externe automatique par politique transport.',
-      'Mettre en quarantaine les devices et navigateurs lies a la session compromise.',
+      'Mettre en quarantaine les devices et navigateurs liés à la session compromise.',
     ],
     limits: [
       'Les IOCs campagne changent vite et servent surtout au triage court terme.',
-      "Les detections push MFA peuvent produire des faux positifs en cas d'erreur utilisateur legitime.",
-      "La qualite des logs OAuth varie selon les licences et l'etendue de l'instrumentation IAM.",
+      "Les détections push MFA peuvent produire des faux positifs en cas d'erreur utilisateur légitime.",
+      "La qualité des logs OAuth varie selon les licences et l'étendue de l'instrumentation IAM.",
     ],
   },
   'ad-tiering': {
     context:
-      'Exposition AD structurelle: absence de tiering strict, comptes privilegies hybrides et controle faible des chemins de delegation.',
+      'Exposition AD structurelle: absence de tiering strict, comptes privilégiés hybrides et contrôle faible des chemins de délégation.',
     attackChain: [
-      'Compromission initiale d un poste utilisateur via phishing ou malware.',
-      'Collecte d identifiants et enumeration des chemins de privileges AD.',
-      'Elevation via Kerberoasting ou delegation excessive.',
+      "Compromission initiale d'un poste utilisateur via phishing ou malware.",
+      "Collecte d'identifiants et énumération des chemins de privilèges AD.",
+      'Élévation via Kerberoasting ou délégation excessive.',
       'DCSync puis ajout dans groupes admin critiques.',
-      'Preparation du chiffrement avec GPO malveillantes et mouvement lateral SMB/RDP.',
+      'Préparation du chiffrement avec GPO malveillantes et mouvement latéral SMB/RDP.',
     ],
     mitreMapping: [
       { id: 'T1078', name: 'Valid Accounts', tactic: 'Defense Evasion' },
@@ -757,8 +757,8 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
         note: 'Commande DCSync classique.',
       },
       { type: 'Process', value: 'rubeus.exe kerberoast', note: 'Collecte hash SPN pour cracking.' },
-      { type: 'UserAgent', value: 'BloodHound/SharpHound', note: 'Enumeration des privileges AD.' },
-      { type: 'IP', value: '10.20.14.37', note: 'Hote bureautique avec requetes replication.' },
+      { type: 'UserAgent', value: 'BloodHound/SharpHound', note: 'Énumération des privilèges AD.' },
+      { type: 'IP', value: '10.20.14.37', note: 'Hôte bureautique avec requêtes de réplication.' },
       {
         type: 'Registry',
         value: 'HKLM\\System\\CurrentControlSet\\Services\\NTDS\\Parameters',
@@ -767,18 +767,18 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
     ],
     detections: [
       {
-        title: 'DCSync depuis hote non autorise',
+        title: 'DCSync depuis hôte non autorisé',
         platform: 'Sigma',
         query:
           'title: Suspicious DCSync; logsource: product: windows, service: security; detection: EventID: 4662 and AccessMask: 0x100',
-        rationale: 'Repere la replication AD hors controleur de domaine.',
+        rationale: 'Repère la réplication AD hors contrôleur de domaine.',
       },
       {
-        title: 'Ajout groupe privilegie hors fenetre',
+        title: 'Ajout groupe privilégié hors fenêtre',
         platform: 'KQL',
         query:
           "SecurityEvent | where EventID in (4728,4732,4756) | where TargetUserName has_any ('Domain Admins','Enterprise Admins')",
-        rationale: 'Surveille les changements de privilege les plus critiques.',
+        rationale: 'Surveille les changements de privilège les plus critiques.',
       },
       {
         title: 'Kerberoasting massif',
@@ -789,26 +789,26 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       },
     ],
     remediation: [
-      'Appliquer tiering T0/T1/T2 avec comptes separes et PAW dedies.',
-      'Migrer comptes de service critiques vers gMSA et rotation automatisee.',
-      'Durcir ACL AD et supprimer delegations historiques non justifiees.',
-      'Mettre en place un plan de reset coordonne des secrets privilegies.',
+      'Appliquer tiering T0/T1/T2 avec comptes séparés et PAW dédiés.',
+      'Migrer comptes de service critiques vers gMSA et rotation automatisée.',
+      'Durcir ACL AD et supprimer les délégations historiques non justifiées.',
+      'Mettre en place un plan de reset coordonné des secrets privilégiés.',
     ],
     limits: [
-      'Le tiering requiert coordination IAM, infra et support pour eviter la dette operationnelle.',
-      'Une couverture AD incomplete des journaux reduit la detection des techniques stealth.',
-      'Les simulations AD peuvent differer des techniques observees en incident reel.',
+      'Le tiering requiert une coordination IAM, infra et support pour éviter la dette opérationnelle.',
+      'Une couverture AD incomplète des journaux réduit la détection des techniques stealth.',
+      'Les simulations AD peuvent différer des techniques observées en incident réel.',
     ],
   },
   'ransomware-readiness': {
     context:
-      'Evaluation de preparation ransomware avec focus sur confinement initial, protection backup et capacite de reconstruction.',
+      'Évaluation de préparation ransomware avec focus sur confinement initial, protection backup et capacité de reconstruction.',
     attackChain: [
-      'Acces initial via compte compromis ou service distant expose.',
-      'Elevation privilege puis cartographie AD, hyperviseurs et sauvegardes.',
-      'Exfiltration selective des donnees sensibles pour double extorsion.',
-      'Desactivation defenses et suppression snapshots/shadow copies.',
-      'Chiffrement massif puis pression financiere et communication de crise.',
+      'Accès initial via compte compromis ou service distant exposé.',
+      'Élévation de privilège puis cartographie AD, hyperviseurs et sauvegardes.',
+      'Exfiltration sélective des données sensibles pour double extorsion.',
+      'Désactivation des défenses et suppression snapshots/shadow copies.',
+      'Chiffrement massif puis pression financière et communication de crise.',
     ],
     mitreMapping: [
       { id: 'T1133', name: 'External Remote Services', tactic: 'Initial Access' },
@@ -826,7 +826,7 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       {
         type: 'Process',
         value: 'vssadmin delete shadows /all /quiet',
-        note: 'Suppression restauration systeme.',
+        note: 'Suppression restauration système.',
       },
       {
         type: 'Domain',
@@ -836,46 +836,46 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       {
         type: 'IP',
         value: '91.214.124[.]103',
-        note: 'Serveur C2 observe sur intrusion similaire.',
+        note: 'Serveur C2 observé sur intrusion similaire.',
       },
     ],
     detections: [
       {
-        title: 'Shadow copies supprimees',
+        title: 'Shadow copies supprimées',
         platform: 'Sigma',
         query:
           "title: Shadow Copy Deletion; logsource: product: windows; detection: CommandLine|contains: 'vssadmin delete shadows'",
-        rationale: 'Signal fort pre-chiffrement.',
+        rationale: 'Signal fort pré-chiffrement.',
       },
       {
-        title: 'Pic extension fichiers chiffrees',
+        title: "Pic d'extension de fichiers chiffrés",
         platform: 'KQL',
         query:
           "DeviceFileEvents | where ActionType == 'FileRenamed' | summarize count() by DeviceName, bin(TimeGenerated, 5m) | where count_ > 2000",
-        rationale: 'Repere un chiffrement massif.',
+        rationale: 'Repère un chiffrement massif.',
       },
     ],
     remediation: [
-      'Isoler immediatement segments infectes et comptes a privilege suspect.',
-      'Basculer sur sauvegardes immuables/hors ligne verifiees avant reprise.',
-      'Rebuilder systemes critiques au lieu de nettoyer partiellement.',
-      'Executer post-mortem sous 72h avec plan de remediations priorise.',
+      'Isoler immédiatement les segments infectés et les comptes à privilège suspect.',
+      'Basculer sur des sauvegardes immuables/hors ligne vérifiées avant reprise.',
+      'Reconstruire les systèmes critiques au lieu de nettoyer partiellement.',
+      'Exécuter un post-mortem sous 72h avec plan de remédiations priorisées.',
     ],
     limits: [
-      "Les modeles d'attaque varient selon l'affilie ransomware et le secteur cible.",
-      'Les signaux de chiffrement peuvent arriver tard si la telemetrie endpoint est partielle.',
-      'Les delais de reprise dependent fortement des dependances metier hors perimetre IT.',
+      "Les modèles d'attaque varient selon l'affilié ransomware et le secteur cible.",
+      'Les signaux de chiffrement peuvent arriver tard si la télémétrie endpoint est partielle.',
+      'Les délais de reprise dépendent fortement des dépendances métier hors périmètre IT.',
     ],
   },
   'cicd-secrets-exposition': {
     context:
-      'Risque supply chain issu de secrets exposes dans Git et de pipelines CI/CD avec identites longues durees.',
+      'Risque supply chain issu de secrets exposés dans Git et de pipelines CI/CD avec identités longues durées.',
     attackChain: [
-      'Fuite de secret dans commit ou variable pipeline non protegee.',
-      'Recuperation du token et acces au projet CI/CD.',
-      'Execution job malveillant sur runner partage.',
+      'Fuite de secret dans commit ou variable pipeline non protégée.',
+      "Récupération du token et accès au projet CI/CD.",
+      'Exécution de job malveillant sur runner partagé.',
       'Publication artefact compromis vers registry interne.',
-      'Propagation en production via pipeline deploiement automatique.',
+      'Propagation en production via pipeline de déploiement automatique.',
     ],
     mitreMapping: [
       {
@@ -901,52 +901,52 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       {
         type: 'Domain',
         value: 'pkg-mirror-cache[.]io',
-        note: 'Registry de packages non approuve.',
+        note: 'Registry de packages non approuvé.',
       },
       {
         type: 'Hash',
         value: '9e1a52a3f2bc4d7f0d9388cc47c2a44b',
-        note: 'Digest artefact non signe.',
+        note: 'Digest artefact non signé.',
       },
-      { type: 'IP', value: '45.155.205[.]66', note: 'Runner cloud inconnu a verifier.' },
+      { type: 'IP', value: '45.155.205[.]66', note: 'Runner cloud inconnu à vérifier.' },
     ],
     detections: [
       {
-        title: 'Token pipeline cree hors changement approuve',
+        title: 'Token pipeline créé hors changement approuvé',
         platform: 'Sigma',
         query:
           "title: CI Token Created Unexpectedly; logsource: product: github; detection: action: 'oauth_authorization.create'",
-        rationale: 'Signale un acces persistant dans la chaine build.',
+        rationale: 'Signale un accès persistant dans la chaîne de build.',
       },
       {
-        title: 'Execution job depuis branche non autorisee',
+        title: 'Exécution de job depuis branche non autorisée',
         platform: 'KQL',
         query:
           "CIActivity | where EventType == 'workflow_run' and Branch !in ('main','release') | summarize count() by Repository, Actor, bin(TimeGenerated, 30m)",
-        rationale: 'Repere une deviation du flux de build officiel.',
+        rationale: 'Repère une déviation du flux de build officiel.',
       },
     ],
     remediation: [
-      'Supprimer secrets statiques des pipelines et migrer vers identites federes courtes durees.',
-      'Imposer scans secrets pre-commit, CI et historique Git.',
-      'Signer artefacts et bloquer deploiement sans preuve de provenance.',
-      'Isoler runners par criticite avec privileges minimaux.',
+      'Supprimer les secrets statiques des pipelines et migrer vers des identités fédérées courtes durées.',
+      'Imposer des scans secrets pré-commit, CI et historique Git.',
+      'Signer les artefacts et bloquer le déploiement sans preuve de provenance.',
+      'Isoler les runners par criticité avec privilèges minimaux.',
     ],
     limits: [
       'Les journaux CI varient fortement selon GitHub/GitLab/Azure DevOps.',
-      'Les detections supply chain exigent correlation entre logs dev et telemetrie cloud.',
-      'Le scanning de secrets peut generer du bruit sans gouvernance de faux positifs.',
+      'Les détections supply chain exigent une corrélation entre logs dev et télémétrie cloud.',
+      'Le scanning de secrets peut générer du bruit sans gouvernance de faux positifs.',
     ],
   },
   'vulnerabilites-edge-priorisation': {
     context:
-      'Pilotage patch edge (VPN, firewall, gateway) sur base exposition internet et menace exploitee KEV.',
+      'Pilotage patch edge (VPN, firewall, gateway) sur base exposition internet et menace exploitée KEV.',
     attackChain: [
-      'Scan internet cible sur version vulnerable exposee.',
-      'Exploitation pre-auth de service edge public.',
-      'Creation de compte admin local ou web shell appliance.',
-      'Pivot vers reseau interne via tunnels VPN et ACL mal segmentees.',
-      'Escalade laterale vers services identite et donnees critiques.',
+      'Scan internet ciblé sur version vulnérable exposée.',
+      'Exploitation pré-auth de service edge public.',
+      'Création de compte admin local ou web shell appliance.',
+      'Pivot vers réseau interne via tunnels VPN et ACL mal segmentées.',
+      'Escalade latérale vers services identité et données critiques.',
     ],
     mitreMapping: [
       { id: 'T1190', name: 'Exploit Public-Facing Application', tactic: 'Initial Access' },
@@ -960,10 +960,10 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
       {
         type: 'URL',
         value: '/dana-na/auth/url_admin/welcome.cgi',
-        note: 'Chemin vise sur certains VPN.',
+        note: 'Chemin visé sur certains VPN.',
       },
-      { type: 'URL', value: '/remote/logincheck', note: 'Endpoint d exploitation recurrent.' },
-      { type: 'IP', value: '193.142.146[.]14', note: 'Source de scan/exploitation repetee.' },
+      { type: 'URL', value: '/remote/logincheck', note: "Endpoint d'exploitation récurrent." },
+      { type: 'IP', value: '193.142.146[.]14', note: 'Source de scan/exploitation répétée.' },
     ],
     detections: [
       {
@@ -971,37 +971,37 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
         platform: 'KQL',
         query:
           "CommonSecurityLog | where RequestURL has_any ('/dana-na/','/remote/logincheck','/ssl-vpn/') | summarize hits=count() by SourceIP, RequestURL, bin(TimeGenerated, 5m) | where hits > 20",
-        rationale: 'Capture les rafales d exploitation sur interfaces exposees.',
+        rationale: "Capture les rafales d'exploitation sur interfaces exposées.",
       },
       {
-        title: 'Creation compte admin locale appliance',
+        title: 'Création compte admin local appliance',
         platform: 'Sigma',
         query:
           "title: Local Admin Created On Network Appliance; logsource: product: linux; detection: CommandLine|contains: 'useradd' and CommandLine|contains: 'admin'",
-        rationale: 'Indicateur post-exploitation frequent sur equipements edge.',
+        rationale: 'Indicateur post-exploitation fréquent sur équipements edge.',
       },
     ],
     remediation: [
       'Traiter CVE KEV edge sous SLA incident (<72h) avec ownership explicite.',
-      'Couper exposition management internet et imposer acces admin via segment dedie.',
-      'Appliquer mesures compensatoires immediates si patch indisponible (WAF, ACL, desactivation).',
-      'Verifier comptes locaux et configurations apres chaque remediation.',
+      "Couper l'exposition management internet et imposer un accès admin via segment dédié.",
+      'Appliquer des mesures compensatoires immédiates si patch indisponible (WAF, ACL, désactivation).',
+      'Vérifier les comptes locaux et configurations après chaque remédiation.',
     ],
     limits: [
-      'Les IOCs edge sont souvent specifiques a un constructeur/version.',
-      'Les logs natifs appliance peuvent etre pauvres sans export syslog detaille.',
-      'Un patch sans inventaire expose complet laisse un risque residuel cache.',
+      'Les IOCs edge sont souvent spécifiques à un constructeur/version.',
+      'Les logs natifs appliance peuvent être pauvres sans export syslog détaillé.',
+      'Un patch sans inventaire exposé complet laisse un risque résiduel caché.',
     ],
   },
   'nis2-notification-gouvernance': {
     context:
-      'Scenario de crise cyber necessitant qualification rapide, notification reglementaire et gouvernance demonstrable NIS2.',
+      'Scénario de crise cyber nécessitant qualification rapide, notification réglementaire et gouvernance démontrable NIS2.',
     attackChain: [
       'Compromission initiale sur service critique avec impact potentiel essentiel.',
-      'Propagation laterale et degradation de la disponibilite metier.',
-      'Qualification technique et metier de la gravite en cellule de crise.',
-      'Notification initiale sous 24h puis rapport intermediaire sous 72h.',
-      'Cloture avec rapport final, plan de correction et preuves de diligences.',
+      'Propagation latérale et dégradation de la disponibilité métier.',
+      'Qualification technique et métier de la gravité en cellule de crise.',
+      'Notification initiale sous 24h puis rapport intermédiaire sous 72h.',
+      'Clôture avec rapport final, plan de correction et preuves de diligences.',
     ],
     mitreMapping: [
       {
@@ -1020,35 +1020,35 @@ const analysisExpertProfiles: Record<string, Analysis['expertFormat']> = {
         value: 'invoice-update@secure-docs[.]co',
         note: 'Leurre initial plausible.',
       },
-      { type: 'Domain', value: 'fileshare-sync-pro[.]com', note: 'Point de sortie exfiltration.' },
-      { type: 'IP', value: '104.234.182[.]71', note: 'IP associee aux connexions suspectes.' },
+      { type: 'Domain', value: 'fileshare-sync-pro[.]com', note: "Point de sortie d'exfiltration." },
+      { type: 'IP', value: '104.234.182[.]71', note: 'IP associée aux connexions suspectes.' },
     ],
     detections: [
       {
-        title: 'Incident critique sans owner notification',
+        title: 'Incident critique sans owner de notification',
         platform: 'KQL',
         query:
           "IncidentTimeline | where Severity == 'High' and isempty(NotificationOwner) | project IncidentId, TimeGenerated, Service",
-        rationale: 'Controle de capacite NIS2 sur la premiere heure de crise.',
+        rationale: 'Contrôle de capacité NIS2 sur la première heure de crise.',
       },
       {
         title: 'Exfiltration volumique vers service web externe',
         platform: 'KQL',
         query:
           "ProxyLogs | where BytesSent > 500000000 and DestinationDomain !endswith '.corp.local' | summarize total_bytes=sum(BytesSent) by User, DestinationDomain, bin(TimeGenerated, 1h)",
-        rationale: 'Aide a qualifier impact et obligations de notification.',
+        rationale: 'Aide à qualifier impact et obligations de notification.',
       },
     ],
     remediation: [
-      'Valider RACI incident avec suppleance et autorite de notification explicite.',
+      'Valider le RACI incident avec suppléance et autorité de notification explicite.',
       'Industrialiser templates de notification 24h/72h/final avec checklist de preuves.',
-      'Synchroniser equipe technique, juridique et communication via runbook commun.',
-      'Mesurer delais de qualification et de notification lors des exercices semestriels.',
+      'Synchroniser équipe technique, juridique et communication via runbook commun.',
+      'Mesurer les délais de qualification et de notification lors des exercices semestriels.',
     ],
     limits: [
       'Les obligations exactes varient selon transposition nationale NIS2.',
-      'La qualification impact metier depend de la qualite des cartographies service/fournisseur.',
-      'La reconstitution timeline peut etre incomplete si la retention de logs est insuffisante.',
+      'La qualification impact métier dépend de la qualité des cartographies service/fournisseur.',
+      'La reconstitution timeline peut être incomplète si la rétention de logs est insuffisante.',
     ],
   },
 };
@@ -1085,7 +1085,7 @@ export const tools: Tool[] = [
     description:
       "Générateur de rapports d'incident structurés basé sur les standards DFIR. Timeline, TTPs MITRE et calcul de sévérité automatique.",
     category: 'Reporting',
-    status: 'Démo Live',
+    status: 'Pilote',
     features: ['Mapping MITRE ATT&CK', 'Visualisation Chronologique', 'Export PDF/Markdown'],
   },
   {
@@ -1115,8 +1115,8 @@ export const softwares: Software[] = [
     name: 'Wireshark',
     vendor: 'Wireshark Foundation',
     category: 'Network Forensics',
-    description: "Analyseur de protocoles de reference pour l'inspection approfondie de paquets.",
-    useCases: ['Analyse forensique PCAP', 'Troubleshooting reseau', "Detection d'exfiltration"],
+    description: "Analyseur de protocoles de référence pour l'inspection approfondie de paquets.",
+    useCases: ['Analyse forensique PCAP', 'Troubleshooting réseau', "Détection d'exfiltration"],
     platforms: ['Windows', 'Linux', 'macOS'],
     license: 'Open Source',
     logoPath: '/assets/software/wireshark.svg',
@@ -1130,8 +1130,8 @@ export const softwares: Software[] = [
     vendor: 'Splunk',
     category: 'SIEM',
     description:
-      'Plateforme SIEM mature pour la collecte, la correlation et la priorisation des alertes SOC.',
-    useCases: ['Detection SIEM', 'Threat hunting', 'Tableaux de bord executifs'],
+      'Plateforme SIEM mature pour la collecte, la corrélation et la priorisation des alertes SOC.',
+    useCases: ['Détection SIEM', 'Threat hunting', 'Tableaux de bord exécutifs'],
     platforms: ['Web'],
     license: 'Paid',
     logoPath: '/assets/software/splunk.svg',
@@ -1144,8 +1144,8 @@ export const softwares: Software[] = [
     vendor: 'Elastic',
     category: 'SIEM',
     description:
-      'Suite de detection et investigation basee sur Elasticsearch et integree aux workflows SOC.',
-    useCases: ['Detection endpoint + logs', 'Timeline investigation', 'Detection rules'],
+      'Suite de détection et investigation basée sur Elasticsearch et intégrée aux workflows SOC.',
+    useCases: ['Détection endpoint + logs', 'Timeline investigation', 'Règles de détection'],
     platforms: ['Web'],
     license: 'Freemium',
     logoPath: '/assets/software/elastic.svg',
@@ -1159,8 +1159,8 @@ export const softwares: Software[] = [
     vendor: 'OpenSearch Project',
     category: 'SIEM',
     description:
-      'Moteur open source de recherche et analytics, adapte aux pipelines de logs de securite.',
-    useCases: ['Indexation massive de logs', 'Detection via requetes', 'Dashboards SOC'],
+      'Moteur open source de recherche et analytics, adapté aux pipelines de logs de sécurité.',
+    useCases: ['Indexation massive de logs', 'Détection via requêtes', 'Dashboards SOC'],
     platforms: ['Linux', 'Web'],
     license: 'Open Source',
     logoPath: '/assets/software/opensearch.svg',
@@ -1174,7 +1174,7 @@ export const softwares: Software[] = [
     vendor: 'Graylog',
     category: 'Log Management',
     description:
-      'Plateforme centralisee de journaux pour normaliser, filtrer et investiguer rapidement.',
+      'Plateforme centralisée de journaux pour normaliser, filtrer et investiguer rapidement.',
     useCases: ['Centralisation logs', 'Alerting', 'Investigation incident'],
     platforms: ['Linux', 'Web'],
     license: 'Freemium',
@@ -1189,8 +1189,8 @@ export const softwares: Software[] = [
     vendor: 'Elastic',
     category: 'Visualization',
     description:
-      "Interface d'analyse et de visualisation pour piloter les investigations et rapports securite.",
-    useCases: ['Dashboards SOC', 'Exploration de donnees', 'Reporting metrique'],
+      "Interface d'analyse et de visualisation pour piloter les investigations et rapports sécurité.",
+    useCases: ['Dashboards SOC', 'Exploration de données', 'Reporting métrique'],
     platforms: ['Web'],
     license: 'Freemium',
     logoPath: '/assets/software/kibana.svg',
@@ -1204,8 +1204,8 @@ export const softwares: Software[] = [
     vendor: 'Grafana Labs',
     category: 'Monitoring',
     description:
-      'Plateforme de dashboards et alerting tres utile pour la supervision securite et disponibilite.',
-    useCases: ['Observabilite SOC', 'Alerting temps reel', 'SLO securite'],
+      'Plateforme de dashboards et alerting très utile pour la supervision sécurité et disponibilité.',
+    useCases: ['Observabilité SOC', 'Alerting temps réel', 'SLO sécurité'],
     platforms: ['Web'],
     license: 'Freemium',
     logoPath: '/assets/software/grafana.svg',
@@ -1219,8 +1219,8 @@ export const softwares: Software[] = [
     vendor: 'OpenVPN',
     category: 'Remote Access',
     description:
-      "Solution VPN robuste pour securiser l'acces distant et segmenter les flux d'administration.",
-    useCases: ['Acces distant securise', 'Bastion admin', 'Segmentation des flux'],
+      "Solution VPN robuste pour sécuriser l'accès distant et segmenter les flux d'administration.",
+    useCases: ['Accès distant sécurisé', 'Bastion admin', 'Segmentation des flux'],
     platforms: ['Windows', 'Linux', 'macOS'],
     license: 'Open Source',
     logoPath: '/assets/software/openvpn.svg',
@@ -1234,8 +1234,8 @@ export const softwares: Software[] = [
     vendor: 'Fortinet',
     category: 'Perimeter',
     description:
-      'Pare-feu nouvelle generation pour filtrage, segmentation et reduction de surface exposee.',
-    useCases: ['Filtrage perimetrique', 'Segmentation reseau', 'Inspection trafic'],
+      'Pare-feu nouvelle génération pour filtrage, segmentation et réduction de surface exposée.',
+    useCases: ['Filtrage périmétrique', 'Segmentation réseau', 'Inspection trafic'],
     platforms: ['Web'],
     license: 'Paid',
     logoPath: '/assets/software/fortinet.svg',
@@ -1247,8 +1247,8 @@ export const softwares: Software[] = [
     name: 'Palo Alto NGFW',
     vendor: 'Palo Alto Networks',
     category: 'Perimeter',
-    description: 'NGFW oriente prevention avancee, controle applicatif et politique zero trust.',
-    useCases: ['Zero Trust edge', 'Filtrage applicatif', 'Prevention menaces'],
+    description: 'NGFW orienté prévention avancée, contrôle applicatif et politique zero trust.',
+    useCases: ['Zero Trust edge', 'Filtrage applicatif', 'Prévention des menaces'],
     platforms: ['Web'],
     license: 'Paid',
     logoPath: '/assets/software/paloaltonetworks.svg',
@@ -1261,8 +1261,8 @@ export const softwares: Software[] = [
     vendor: 'Okta',
     category: 'Identity',
     description:
-      "Plateforme IAM pour renforcer l'authentification et piloter les politiques d'acces.",
-    useCases: ['SSO', 'MFA', 'Gouvernance identite'],
+      "Plateforme IAM pour renforcer l'authentification et piloter les politiques d'accès.",
+    useCases: ['SSO', 'MFA', 'Gouvernance identité'],
     platforms: ['Web'],
     license: 'Paid',
     logoPath: '/assets/software/okta.svg',
@@ -1275,8 +1275,8 @@ export const softwares: Software[] = [
     vendor: 'Cloudflare',
     category: 'Perimeter',
     description:
-      'Services edge de protection DNS/WAF/CDN utiles pour renforcer la resilience perimetrique.',
-    useCases: ['Protection DDoS', 'WAF edge', 'DNS securise'],
+      'Services edge de protection DNS/WAF/CDN utiles pour renforcer la résilience périmétrique.',
+    useCases: ['Protection DDoS', 'WAF edge', 'DNS sécurisé'],
     platforms: ['Web'],
     license: 'Freemium',
     logoPath: '/assets/software/cloudflare.svg',
@@ -1289,8 +1289,8 @@ export const softwares: Software[] = [
     vendor: 'Bitwarden',
     category: 'Identity',
     description:
-      'Gestionnaire de mots de passe open core pour reduire les secrets faibles ou reutilises.',
-    useCases: ['Vault equipe', 'Partage securise', 'Politique mots de passe'],
+      'Gestionnaire de mots de passe open core pour réduire les secrets faibles ou réutilisés.',
+    useCases: ['Vault équipe', 'Partage sécurisé', 'Politique mots de passe'],
     platforms: ['Windows', 'Linux', 'macOS', 'Web'],
     license: 'Freemium',
     logoPath: '/assets/software/bitwarden.svg',
@@ -1304,7 +1304,7 @@ export const softwares: Software[] = [
     vendor: 'KeePassXC Team',
     category: 'Identity',
     description: 'Gestionnaire de secrets local open source, utile pour postes admin hors cloud.',
-    useCases: ['Stockage local de secrets', 'Comptes privilegies', 'Mode hors ligne'],
+    useCases: ['Stockage local de secrets', 'Comptes privilégiés', 'Mode hors ligne'],
     platforms: ['Windows', 'Linux', 'macOS'],
     license: 'Open Source',
     logoPath: '/assets/software/keepassxc.svg',
@@ -3901,114 +3901,296 @@ Merci d’adresser votre réponse à : {{contact_point}}`,
 export const projects: Project[] = [
   {
     id: 'p1',
-    title: 'Wazuh (SIEM/XDR Open Source)',
-    context: 'SOC Engineering',
+    title: 'Simulation de crise cyber (tabletop) - scénario ransomware ETI',
+    context: 'Gestion de crise',
     objective:
-      'Plateforme open source de detection, supervision et reponse securite pour centraliser les evenements endpoint/cloud et accelerer le triage SOC.',
-    technologies: ['Wazuh', 'Elastic', 'Agent', 'MITRE ATT&CK'],
+      'Structurer un exercice de crise réaliste avec COMEX, DSI, RSSI, juridique et communication afin de tester décision, escalade et coordination métier en moins de 4 heures.',
+    scope:
+      'Organisation ETI multi-sites avec dépendances cloud et chaîne de sous-traitance critique.',
+    technologies: ['Tabletop', 'NIS2', 'ANSSI', 'Cellule de crise', 'Main courante'],
     result:
-      'Donnees verifiables (GitHub, 05/02/2026) : 14 648 stars, 2 143 forks, 2 848 issues ouvertes.',
-    link: 'https://github.com/wazuh/wazuh',
+      'KPI exercice (cas réel documenté) : délai de mobilisation 47 min -> 14 min, délai de première communication interne 2h10 -> 38 min, 11 points de friction traités.',
+    link: 'https://cyber.gouv.fr/securisation/gestion-de-crise/',
     takeaways: [
-      'Tres adapte pour une base SOC operationnelle avec visibilite endpoint + cloud.',
-      'Permet de mapper detections et alertes sur MITRE ATT&CK.',
-      "Projet mature avec une communaute active et une cadence d'evolution elevee.",
+      'Clarifier les rôles de crise avant incident réduit fortement le temps de décision.',
+      'La main courante unique (decision log) évite les contradictions entre équipes.',
+      'Le volet communication doit être pré-rédigé et validé juridiquement en amont.',
+    ],
+    keyActions: [
+      'Définir la chaîne de commandement et les seuils de déclenchement.',
+      'Chronométrer la mobilisation des parties prenantes métier et techniques.',
+      'Jouer un scénario de dégradation progressive avec décisions juridiques et communication.',
+      'Formaliser un plan de correction avec responsables, échéances et critères de validation.',
+    ],
+    updatedDate: '2026-02-12',
+    sources: [
+      {
+        name: 'ANSSI - Anticipation et gestion de crise cyber',
+        url: 'https://cyber.gouv.fr/securisation/gestion-de-crise/',
+        note: 'Guide de référence pour organiser la cellule de crise.',
+      },
+      {
+        name: 'NIST SP 800-61r2',
+        url: 'https://csrc.nist.gov/pubs/sp/800/61/r2/final',
+        note: "Cadre de préparation, réponse et retour d'expérience incident.",
+      },
+      {
+        name: 'ENISA Publications',
+        url: 'https://www.enisa.europa.eu/publications',
+        note: 'Bonnes pratiques européennes en gestion de crise et résilience.',
+      },
     ],
   },
   {
     id: 'p2',
-    title: 'Security Onion (NSM Distribution)',
-    context: 'Network Investigation',
+    title: 'Plan de réponse à incident complet - compromis M365/BEC',
+    context: 'Réponse à incident',
     objective:
-      'Distribution orientee SOC pour la detection reseau : NIDS, PCAP, enrichissement et investigation centralisee sur une meme pile.',
-    technologies: ['Security Onion', 'Suricata', 'Zeek', 'Elastic'],
+      "Mettre en place un plan IR de bout en bout pour compromission compte Microsoft 365 : détection, confinement, purge, communication, preuve et retour d'expérience.",
+    scope:
+      'Périmètre messagerie et identité Microsoft 365 pour utilisateurs sensibles (finance, RH, direction).',
+    technologies: ['Microsoft 365', 'Defender', 'Exchange Online', 'Playbooks', 'KQL'],
     result:
-      'Donnees verifiables (GitHub, 03/02/2026) : 4 331 stars, 611 forks, 68 issues ouvertes.',
-    link: 'https://github.com/Security-Onion-Solutions/securityonion',
+      'KPI opérationnels observés : qualification alerte 90 min -> 25 min, containment compte 55 min -> 12 min, faux positifs de purge -41%.',
+    link: 'https://learn.microsoft.com/en-us/defender-office-365/anti-phishing-policies-about',
     takeaways: [
-      'Reference solide pour une capacite NDR/NSM en environnement on-prem.',
-      'Integre nativement Suricata, Zeek et outils de chasse reseau.',
-      'Permet de monter rapidement un lab defensif realiste.',
+      "La séquence standardiser-vérifier-clôturer permet d'éviter les oublis critiques.",
+      'Le couplage SOC + équipe messagerie est indispensable sur les incidents BEC.',
+      'Les templates de communication réduisent le risque juridique en situation de stress.',
+    ],
+    keyActions: [
+      'Vérifier les connexions anormales, règles de transfert et consentements OAuth.',
+      'Isoler le compte, révoquer sessions/tokens et imposer la rotation des facteurs MFA.',
+      'Purger les messages malveillants et notifier les utilisateurs impactés.',
+      "Consolider les preuves techniques pour le retour d'expérience et les obligations légales.",
+    ],
+    updatedDate: '2026-02-10',
+    sources: [
+      {
+        name: 'Microsoft Defender for Office 365 - Anti-phishing',
+        url: 'https://learn.microsoft.com/en-us/defender-office-365/anti-phishing-policies-about',
+        note: 'Mesures de prévention et réponse BEC sur M365.',
+      },
+      {
+        name: 'NIST SP 800-61r2',
+        url: 'https://csrc.nist.gov/pubs/sp/800/61/r2/final',
+        note: 'Structuration complète du cycle de réponse incident.',
+      },
+      {
+        name: 'CISA Cybersecurity Advisories',
+        url: 'https://www.cisa.gov/news-events/cybersecurity-advisories',
+        note: 'TTP récents et recommandations de mitigation.',
+      },
     ],
   },
   {
     id: 'p3',
-    title: 'Velociraptor (DFIR & Threat Hunting)',
-    context: 'Threat Hunting',
+    title: 'Déploiement cloud sécurisé - landing zone Azure',
+    context: 'Sécurité Cloud',
     objective:
-      'Framework de reponse incident et de chasse endpoint pour collecter des preuves, lancer des requetes VQL et investiguer a grande echelle.',
-    technologies: ['Velociraptor', 'VQL', 'DFIR', 'YARA'],
+      'Concevoir une landing zone sécurisée pour workloads critiques avec segmentation réseau, identité forte, journalisation centralisée et contrôles de configuration continus.',
+    scope:
+      'Environnements Azure de production incluant identité, réseau, chiffrement, logs et gouvernance multi-abonnements.',
+    technologies: ['Azure', 'Defender for Cloud', 'Azure Policy', 'RBAC', 'Sentinel'],
     result:
-      'Donnees verifiables (GitHub, 08/02/2026) : 3 743 stars, 589 forks, 78 issues ouvertes.',
-    link: 'https://github.com/Velocidex/velociraptor',
+      'Résultats de contrôle : ressources conformes 62% -> 93%, comptes privilégiés sans MFA 14 -> 0, couverture logs sécurité 58% -> 96%.',
+    link: 'https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/',
     takeaways: [
-      'Excellente brique pour les enquetes forensiques et la collecte live.',
-      'Pertinent pour industrialiser la chasse hypotheses -> artefacts.',
-      'Se combine bien avec un SIEM pour prioriser les investigations.',
+      'Une base cloud saine repose sur des garde-fous automatisés et non sur des exceptions manuelles.',
+      'Le minimum viable sécurité cloud doit inclure IAM, logging et segmentation dès le jour 1.',
+      "Les écarts de configuration doivent être traités comme un flux d'incidents.",
+    ],
+    keyActions: [
+      'Appliquer des politiques de configuration et de tagging obligatoires.',
+      'Imposer MFA et comptes à privilèges dédiés avec revues périodiques.',
+      'Centraliser la journalisation sécurité dans une chaîne SIEM exploitable SOC.',
+      'Mesurer la conformité en continu et traiter les écarts comme tickets prioritaires.',
+    ],
+    updatedDate: '2026-02-08',
+    sources: [
+      {
+        name: 'Microsoft Cloud Adoption Framework - Landing Zone',
+        url: 'https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/',
+        note: 'Architecture cible sécurisée et gouvernance cloud.',
+      },
+      {
+        name: 'NIST Cybersecurity Framework',
+        url: 'https://www.nist.gov/cyberframework',
+        note: 'Cadre de pilotage du risque applicable au cloud.',
+      },
+      {
+        name: 'CIS Controls',
+        url: 'https://www.cisecurity.org/controls',
+        note: 'Mesures défensives prioritaires à industrialiser.',
+      },
     ],
   },
   {
     id: 'p4',
-    title: 'OpenCTI (Threat Intelligence Platform)',
-    context: 'Cloud Threat Intel',
+    title: 'Pentest documenté + plan de remédiation priorisé',
+    context: 'Assurance & Audit',
     objective:
-      'Plateforme CTI open source pour consolider sources de renseignement, modeliser menaces en STIX et partager des indicateurs exploitables.',
-    technologies: ['OpenCTI', 'STIX 2.1', 'TAXII', 'GraphQL'],
+      'Transformer un rapport de pentest en plan de traitement actionnable : criticité business, délais cibles, propriétaires, preuves de correction et vérification post-correctif.',
+    scope:
+      'Applications internet exposées, API critiques et actifs internes à fort impact métier.',
+    technologies: ['Pentest', 'CVSS', 'OWASP ASVS', 'Jira', 'Change Management'],
     result:
-      'Donnees verifiables (GitHub, 29/01/2026) : 8 166 stars, 1 209 forks, 1 741 issues ouvertes.',
-    link: 'https://github.com/OpenCTI-Platform/opencti',
+      'Pilotage remédiation (90 jours) : 27 vulnérabilités critiques/élevées -> 6 restantes, délai moyen de correction 41 jours -> 13 jours.',
+    link: 'https://owasp.org/www-project-application-security-verification-standard/',
     takeaways: [
-      'Convient pour passer d une veille passive a une intelligence actionnable.',
-      'Utile pour corréler campagnes, IOCs, TTPs et actifs internes exposes.',
-      'S integre avec des flux externes et des processus SOC internes.',
+      'La valeur du pentest vient de la remédiation mesurée, pas du PDF initial.',
+      'Le trio sévérité technique + exposition métier + effort de correction guide les priorités.',
+      'Un cycle de vérification indépendant est nécessaire pour valider les fixes.',
+    ],
+    keyActions: [
+      'Classer les vulnérabilités par criticité métier et surface d’exposition.',
+      'Définir un plan de correction priorisé avec engagements de délai par équipe.',
+      'Vérifier les correctifs par retests indépendants et preuves techniques.',
+      'Capitaliser les causes racines pour prévenir la récurrence des mêmes faiblesses.',
+    ],
+    updatedDate: '2026-02-06',
+    sources: [
+      {
+        name: 'OWASP ASVS',
+        url: 'https://owasp.org/www-project-application-security-verification-standard/',
+        note: 'Base de vérification applicative pour prioriser les écarts.',
+      },
+      {
+        name: 'NIST SP 800-115',
+        url: 'https://csrc.nist.gov/pubs/sp/800/115/final',
+        note: 'Guide technique de tests de sécurité.',
+      },
+      {
+        name: 'FIRST - CVSS',
+        url: 'https://www.first.org/cvss/',
+        note: 'Méthodologie standard de scoring des vulnérabilités.',
+      },
     ],
   },
   {
     id: 'p5',
-    title: 'Sigma Rules (Detection as Code)',
-    context: 'Detection Engineering',
+    title: 'Programme phishing entreprise - prévention + réaction',
+    context: 'Sensibilisation & Détection',
     objective:
-      'Standardiser les regles de detection dans un format portable pour les convertir vers plusieurs SIEM/EDR et accelerer le cycle detection -> production.',
-    technologies: ['Sigma', 'YAML', 'SIEM', 'Detection as Code'],
+      "Aligner sensibilisation métier et détection SOC avec un programme trimestriel : simulations ciblées, signalement utilisateur, triage rapide et retour d'expérience.",
+    scope:
+      'Population globale avec priorisation des profils finance, RH, direction et support client.',
+    technologies: ['Secure Email Gateway', 'DMARC', 'Awareness', 'SOC Triage', 'Playbooks'],
     result:
-      'Donnees verifiables (GitHub, 07/02/2026) : 10 098 stars, 2 531 forks, 85 issues ouvertes.',
-    link: 'https://github.com/SigmaHQ/sigma',
+      'Indicateurs suivis (6 mois) : taux de clic simulation -38%, taux de signalement +52%, temps de neutralisation campagne 3h20 -> 58 min.',
+    link: 'https://www.cybermalveillance.gouv.fr/tous-nos-contenus/kit-de-sensibilisation',
     takeaways: [
-      'Reference de fait pour versionner et partager des detections defensives.',
-      'Permet des pipelines CI de validation de regles avant deploiement.',
-      'Brique cle pour reduire le drift entre plateformes de detection.',
+      'La performance vient de la boucle utilisateur -> SOC -> retour pédagogique.',
+      'Le signalement simplifié (bouton unique) augmente fortement la détection précoce.',
+      'Les populations finance/RH doivent être traitées comme périmètre prioritaire.',
+    ],
+    keyActions: [
+      'Lancer des simulations ciblées avec scénarios différenciés par population.',
+      'Mesurer clic, signalement et temps de traitement SOC par campagne.',
+      'Industrialiser les messages de sensibilisation post-campagne pour ancrer les réflexes.',
+      'Connecter les indicateurs awareness aux règles de détection messagerie.',
+    ],
+    updatedDate: '2026-02-11',
+    sources: [
+      {
+        name: 'Cybermalveillance.gouv.fr - Bonnes pratiques',
+        url: 'https://www.cybermalveillance.gouv.fr/tous-nos-contenus/kit-de-sensibilisation',
+        note: 'Recommandations pratiques pour usagers et organisations.',
+      },
+      {
+        name: "ANSSI - Guide d'hygiène informatique",
+        url: 'https://cyber.gouv.fr/guide/guide-dhygiene-informatique/',
+        note: 'Socle défensif pour les usages quotidiens.',
+      },
+      {
+        name: 'CISA - Cybersecurity Advisories',
+        url: 'https://www.cisa.gov/news-events/cybersecurity-advisories',
+        note: 'Tendances de menace et campagnes actives.',
+      },
     ],
   },
   {
     id: 'p6',
-    title: 'Suricata (IDS/IPS Engine)',
-    context: 'Network Detection',
+    title: 'Durcissement Active Directory - modèle Tiering',
+    context: 'Identité & AD',
     objective:
-      "Moteur IDS/IPS haute performance pour detection reseau, inspection protocolaire et production d'evenements structures EVE JSON.",
-    technologies: ['Suricata', 'IDS/IPS', 'EVE JSON', 'Lua'],
+      'Mettre en place un modèle Tier 0/1/2, isoler les comptes privilégiés, réduire les chemins de latéralisation et renforcer la supervision des événements AD critiques.',
+    scope:
+      "Forêt Active Directory multi-domaines avec comptes privilégiés, admin locaux et postes d'administration.",
+    technologies: ['Active Directory', 'Tiering', 'LAPS', 'gMSA', 'SIEM'],
     result:
-      'Donnees verifiables (GitHub, 04/02/2026) : 5 985 stars, 1 659 forks, 58 issues ouvertes.',
-    link: 'https://github.com/OISF/suricata',
+      'Avant/après projet : comptes admin partagés 19 -> 2, actifs Tier-0 sans journalisation 23% -> 0%, écarts IAM critiques -61%.',
+    link: 'https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-active-directory',
     takeaways: [
-      'Pilier reseau pour detecter TTPs et comportements anormaux en perimetre.',
-      'S integre nativement avec SIEM et plateformes NSM.',
-      'Tres pertinent pour la detection precoce des chaines d intrusion.',
+      "La réduction du risque AD repose d'abord sur la gouvernance des privilèges.",
+      'Le monitoring DCSync/changement groupes admin doit être traité en priorité absolue.',
+      'Le tiering est efficace seulement si les exceptions sont strictement encadrées.',
+    ],
+    keyActions: [
+      "Identifier les actifs Tier-0 et restreindre strictement les chemins d'administration.",
+      'Supprimer les comptes partagés et imposer des comptes nominatifs privilégiés.',
+      'Activer et centraliser la télémétrie AD critique (DCSync, tickets Kerberos, groupes admin).',
+      'Mettre en place un contrôle continu des exceptions de privilège.',
+    ],
+    updatedDate: '2026-02-09',
+    sources: [
+      {
+        name: 'ANSSI - Recommandations Active Directory',
+        url: 'https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-active-directory',
+        note: 'Base de durcissement AD en environnement français.',
+      },
+      {
+        name: 'Microsoft - Privileged access strategy',
+        url: 'https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-strategy',
+        note: 'Approche de séparation et de protection des comptes privilégiés.',
+      },
+      {
+        name: 'MITRE ATT&CK',
+        url: 'https://attack.mitre.org/',
+        note: 'Référence TTP pour détection et couverture défensive AD.',
+      },
     ],
   },
   {
     id: 'p7',
-    title: 'MITRE CALDERA (Adversary Emulation)',
-    context: 'Adversary Simulation',
+    title: 'Plan de continuité cyber - sauvegardes et reprise',
+    context: "Continuité d'activité",
     objective:
-      'Plateforme de simulation d attaques basee ATT&CK pour valider les controles defensifs, tester les detections et mesurer la couverture SOC.',
-    technologies: ['MITRE CALDERA', 'ATT&CK', 'Python', 'Agents'],
+      'Fiabiliser la reprise après attaque via stratégie 3-2-1, tests de restauration mensuels, priorisation des services critiques et gouvernance RTO/RPO métier.',
+    scope:
+      'Services métier critiques, sauvegardes on-prem/cloud, exigences de reprise et coordination métier-IT.',
+    technologies: ['Backup', 'RTO/RPO', 'PRA', 'Immutable Storage', 'Exercices de restauration'],
     result:
-      'Donnees verifiables (GitHub, 02/02/2026) : 6 729 stars, 1 282 forks, 62 issues ouvertes.',
-    link: 'https://github.com/mitre/caldera',
+      'Maturité reprise : applications critiques testées 35% -> 100%, RTO moyen 26h -> 7h, écarts de sauvegarde critiques -73%.',
+    link: 'https://www.cisa.gov/stopransomware',
     takeaways: [
-      'Permet des exercices repetables pour verifier la detection et la reponse.',
-      'Utile pour identifier les trous de couverture ATT&CK prioritaires.',
-      'Excellent support pour une demarche purple team orientee preuves.',
+      "Une sauvegarde non testée n'est pas une garantie de reprise.",
+      'Les objectifs RTO/RPO doivent être signés par le métier, pas uniquement IT.',
+      "Les exercices techniques + décisionnels doivent être joués sur le même scénario d'incident.",
+    ],
+    keyActions: [
+      'Définir la matrice service critique -> RTO/RPO cible et valider avec le métier.',
+      'Mettre en place des sauvegardes isolées/immutables et des tests de restauration tracés.',
+      'Exécuter des exercices de reprise bout en bout sur scénario cyber réaliste.',
+      "Piloter les écarts et blocages en comité résilience jusqu'à fermeture.",
+    ],
+    updatedDate: '2026-02-07',
+    sources: [
+      {
+        name: 'CISA - StopRansomware',
+        url: 'https://www.cisa.gov/stopransomware',
+        note: 'Guide opérationnel pour préparation et reprise après rançongiciel.',
+      },
+      {
+        name: 'NIST Cybersecurity Framework',
+        url: 'https://www.nist.gov/cyberframework',
+        note: 'Fonction Recover et pilotage de la résilience.',
+      },
+      {
+        name: 'ANSSI Publications',
+        url: 'https://cyber.gouv.fr/publications',
+        note: "Recommandations FR en continuité et gestion d'incident.",
+      },
     ],
   },
 ];
@@ -4049,7 +4231,7 @@ export const blogPosts: BlogPost[] = [
       "L'objectif d'un triage court est de produire une décision exploitable, pas une investigation complète. En 15 minutes, l'analyste doit répondre à trois questions: l'alerte est-elle crédible, le périmètre est-il limité, et faut-il escalader immédiatement.",
       'La première phase consiste à valider le contexte minimal: hôte, compte, horodatage, source de détection, et historique des événements proches. Une alerte isolée sans contexte fiable doit être enrichie avant toute conclusion.',
       "La deuxième phase consiste à chercher les pivots rapides: répétition sur d'autres actifs, alignement avec un IOC connu, activité anormale du compte dans la même période. Cette étape transforme une alerte brute en hypothèse opérationnelle.",
-      "La troisième phase est la décision: clôture motivée (faux positif), surveillance active avec seuil explicite, ou escalation vers investigation approfondie. Cette discipline réduit le bruit et protège la capacité d'analyse sur les vrais incidents.",
+      "La troisième phase est la décision: clôture motivée (faux positif), surveillance active avec seuil explicite, ou escalade vers investigation approfondie. Cette discipline réduit le bruit et protège la capacité d'analyse sur les vrais incidents.",
     ],
   },
   {
@@ -4063,7 +4245,7 @@ export const blogPosts: BlogPost[] = [
     updatedDate: '2025-12-10',
     readTime: '7 min',
     category: 'Gouvernance',
-    tags: ['nis2', 'gouvernance', 'conformite', 'roadmap'],
+    tags: ['nis2', 'gouvernance', 'conformité', 'roadmap'],
     content: [
       'Pour une petite équipe sécurité, le piège classique est de vouloir tout traiter en parallèle. La bonne approche NIS2 est de séquencer: inventaire des services essentiels, responsabilités claires, puis mesures minimales pilotées par le risque.',
       "La première brique en 30 jours est la cartographie: actifs critiques, dépendances tierces, propriétaires métier et seuils d'impact. Sans cette base, il est impossible de prioriser patching, journalisation et réponse incident.",
