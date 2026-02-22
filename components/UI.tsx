@@ -1,9 +1,9 @@
-﻿import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { Hash, X } from 'lucide-react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
 
 // --- BUTTONS ---
-interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'size' | 'children'> {
+interface ButtonProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'size' | 'children'> {
   children?: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'tech';
   size?: 'sm' | 'md' | 'lg';
@@ -43,29 +43,22 @@ export const Button: React.FC<ButtonProps> = ({
 
   if (as === 'span') {
     return (
-      <motion.span
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}
-        {...props}
-      >
+      <span className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}>
         {children}
         {Icon && <Icon className={`ml-2 w-4 h-4 ${size === 'lg' ? 'w-5 h-5' : ''}`} />}
-      </motion.span>
+      </span>
     );
   }
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <button
       type={type}
       className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {children}
       {Icon && <Icon className={`ml-2 w-4 h-4 ${size === 'lg' ? 'w-5 h-5' : ''}`} />}
-    </motion.button>
+    </button>
   );
 };
 
@@ -101,12 +94,11 @@ export const TechBadge: React.FC<{ tech: string; className?: string }> = ({
   className = '',
 }) => {
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
+    <div
       className={`
-      group inline-flex items-center gap-2.5 px-3 py-2 
-      bg-white border border-slate-200 rounded-sm 
-      hover:border-brand-steel hover:shadow-md
+      group inline-flex items-center gap-2.5 px-3 py-2
+      bg-white border border-slate-200 rounded-sm
+      hover:border-brand-steel hover:shadow-md hover:-translate-y-0.5
       transition-all duration-300 cursor-default select-none
       ${className}
     `}
@@ -114,10 +106,10 @@ export const TechBadge: React.FC<{ tech: string; className?: string }> = ({
       {/* Icon Placeholder / Avatar */}
       <div
         className="
-        w-6 h-6 rounded-sm flex-shrink-0 flex items-center justify-center 
-        bg-slate-50 border border-slate-100 
-        text-[9px] font-bold font-mono text-slate-500 uppercase tracking-tight 
-        group-hover:bg-brand-steel group-hover:text-white group-hover:border-transparent 
+        w-6 h-6 rounded-sm flex-shrink-0 flex items-center justify-center
+        bg-slate-50 border border-slate-100
+        text-[9px] font-bold font-mono text-slate-500 uppercase tracking-tight
+        group-hover:bg-brand-steel group-hover:text-white group-hover:border-transparent
         transition-colors duration-300 shadow-sm
       "
       >
@@ -128,7 +120,7 @@ export const TechBadge: React.FC<{ tech: string; className?: string }> = ({
       <span className="text-xs font-semibold text-slate-600 group-hover:text-brand-navy transition-colors whitespace-nowrap">
         {tech}
       </span>
-    </motion.div>
+    </div>
   );
 };
 
@@ -149,14 +141,8 @@ export const BlueprintPanel: React.FC<BlueprintPanelProps> = ({
   grid = false,
 }) => {
   return (
-    <motion.div
-      whileHover={{
-        y: -5,
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      }}
-      initial={{ y: 0 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative overflow-hidden bg-white border border-slate-200 shadow-panel transition-colors duration-300 group ${className}`}
+    <div
+      className={`relative overflow-hidden bg-white border border-slate-200 shadow-panel transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] ${className}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-steel/[0.03] via-transparent to-brand-gold/[0.03]" />
       {/* Blueprint Corners */}
@@ -169,9 +155,7 @@ export const BlueprintPanel: React.FC<BlueprintPanelProps> = ({
       {(title || label) && (
         <div className="flex justify-between items-center border-b border-slate-100 px-6 py-3 bg-slate-50/50">
           {title && (
-            <h3 className="font-display font-bold text-brand-navy uppercase tracking-tight text-sm">
-              {title}
-            </h3>
+            <p className="font-display font-bold text-brand-navy uppercase tracking-tight text-sm">{title}</p>
           )}
           {label && (
             <span className="font-mono text-[10px] text-brand-steel/70 flex items-center gap-1">
@@ -183,7 +167,7 @@ export const BlueprintPanel: React.FC<BlueprintPanelProps> = ({
 
       {/* Content Area */}
       <div className={`relative p-6 ${grid ? 'bg-tech-grid' : ''}`}>{children}</div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -213,31 +197,20 @@ export const ShieldHeader: React.FC<ShieldHeaderProps> = ({
       <div
         className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 ${align === 'center' ? 'text-center' : 'text-left'}`}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className={`flex items-center gap-2 mb-4 text-brand-light/90 font-mono text-xs uppercase tracking-widest ${align === 'center' ? 'justify-center' : ''}`}
+        <div
+          className={`animate-fade-in-up flex items-center gap-2 mb-4 text-brand-light/90 font-mono text-xs uppercase tracking-widest ${align === 'center' ? 'justify-center' : ''}`}
         >
           <div className="w-2 h-2 bg-brand-gold rounded-full animate-pulse"></div>
           <span>{subtitle}</span>
-        </motion.div>
+        </div>
 
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-4xl md:text-6xl font-display font-bold uppercase tracking-tight mb-6 text-white"
-        >
+        <h1 className="animate-fade-in-up text-4xl md:text-6xl font-display font-bold uppercase tracking-tight mb-6 text-white">
           {title}
-        </motion.h1>
+        </h1>
 
         {meta && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className={`flex flex-wrap gap-3 mt-6 ${align === 'center' ? 'justify-center' : ''}`}
+          <div
+            className={`animate-fade-in flex flex-wrap gap-3 mt-6 ${align === 'center' ? 'justify-center' : ''}`}
           >
             {meta.map((m, i) => (
               <span
@@ -247,7 +220,7 @@ export const ShieldHeader: React.FC<ShieldHeaderProps> = ({
                 {m}
               </span>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
     </div>
@@ -339,29 +312,18 @@ export const Drawer: React.FC<DrawerProps> = ({
     >
       {/* Backdrop */}
       {!isInline && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-brand-navy/80 backdrop-blur-sm print:hidden"
+        <div
+          className="absolute inset-0 bg-brand-navy/80 backdrop-blur-sm print:hidden animate-fade-in"
           onClick={onClose}
-        ></motion.div>
+        ></div>
       )}
 
       {/* Panel */}
-      <motion.div
-        initial={isInline ? { opacity: 0, y: 8 } : { x: '100%' }}
-        animate={isInline ? { opacity: 1, y: 0 } : { x: 0 }}
-        exit={isInline ? { opacity: 0, y: 8 } : { x: '100%' }}
-        transition={
-          isInline
-            ? { duration: 0.22, ease: [0.22, 1, 0.36, 1] }
-            : { type: 'spring', damping: 25, stiffness: 200 }
-        }
+      <div
         className={`relative w-full ${sizeClass} ${
           isInline
-            ? 'mx-auto h-auto rounded-sm border border-slate-200 shadow-panel print:max-w-none print:rounded-none print:border-0 print:shadow-none'
-            : 'h-full shadow-2xl'
+            ? 'mx-auto h-auto rounded-sm border border-slate-200 shadow-panel print:max-w-none print:rounded-none print:border-0 print:shadow-none animate-fade-in-up'
+            : 'h-full shadow-2xl animate-slide-in-right'
         } bg-white flex flex-col transform print:h-auto print:transform-none`}
         role="dialog"
         aria-modal={isInline ? undefined : true}
@@ -370,17 +332,17 @@ export const Drawer: React.FC<DrawerProps> = ({
         ref={drawerPanelRef}
       >
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 print:hidden">
-          <h3
+          <p
             id={titleId}
             className="font-display font-bold text-brand-navy uppercase tracking-tight text-sm"
           >
             {title || 'Details'}
-          </h3>
+          </p>
           <button
             type="button"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-brand-navy hover:bg-slate-200/50 rounded-full transition-all"
-            aria-label="Fermer les details"
+            aria-label="Close details"
           >
             <X size={20} />
           </button>
@@ -393,7 +355,7 @@ export const Drawer: React.FC<DrawerProps> = ({
         >
           {children}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

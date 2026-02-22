@@ -43,7 +43,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           navigation: 'Navigation',
           sources: 'Sources & Frameworks',
           viewDetails: 'View details',
-          strictDefensive: 'STRICTLY DEFENSIVE // OPERATIONAL CYBERSECURITY',
+          strictDefensive: 'OPERATIONAL CYBERSECURITY // SOURCE-BASED RESOURCES',
           languageSwitcherAria: 'Change language',
           menuAria: 'Main menu',
           sourceAnssiTag: 'French framework',
@@ -69,7 +69,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           navigation: 'Navigation',
           sources: 'Sources & Référentiels',
           viewDetails: 'Voir détails',
-          strictDefensive: 'STRICTEMENT DÉFENSIF // CYBER OPÉRATIONNELLE',
+          strictDefensive: 'CYBERSÉCURITÉ OPÉRATIONNELLE // RESSOURCES SOURCÉES',
           languageSwitcherAria: 'Changer de langue',
           menuAria: 'Menu principal',
           sourceAnssiTag: 'Référentiel FR',
@@ -329,21 +329,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="grid md:grid-cols-12 gap-12 mb-16">
             {/* Brand & Mission */}
             <div className="md:col-span-4 pr-8">
-              <h3 className="text-white font-display font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2">
+              <div className="text-white font-display font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2">
                 <div className="w-1 h-4 bg-brand-gold"></div>
                 {copy.mission}
-              </h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              </div>
+              <p className="text-slate-300 text-sm leading-relaxed mb-6">
                 {copy.missionDescription}
               </p>
-              <div className="text-xs text-slate-500 font-mono">{copy.copyright}</div>
+              <div className="text-xs text-slate-300 font-mono">{copy.copyright}</div>
             </div>
 
             {/* Navigation Links */}
             <div className="md:col-span-3">
-              <h4 className="text-white font-display font-bold uppercase tracking-wider text-sm mb-4">
+              <p className="text-white font-display font-bold uppercase tracking-wider text-sm mb-4">
                 {copy.navigation}
-              </h4>
+              </p>
               <div className="grid grid-cols-2 gap-x-4">
                 <ul className="space-y-3 text-sm">
                   <li>
@@ -411,9 +411,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {/* SOURCES GRID PREMIUM (A1) */}
             <div className="md:col-span-5">
               <div className="flex justify-between items-end mb-6">
-                <h4 className="text-white font-display font-bold uppercase tracking-wider text-sm">
+                <p className="text-white font-display font-bold uppercase tracking-wider text-sm">
                   {copy.sources}
-                </h4>
+                </p>
                 <Link
                   to={localizedPath('/sources')}
                   className="text-[10px] text-brand-steel font-bold uppercase hover:text-white transition-colors flex items-center gap-1 group"
@@ -450,7 +450,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="text-xs font-bold text-white group-hover:text-brand-gold transition-colors">
                       ANSSI
                     </div>
-                    <div className="text-[9px] text-slate-500 font-mono mt-1">
+                    <div className="text-[9px] text-slate-300 font-mono mt-1">
                       {copy.sourceAnssiTag}
                     </div>
                   </div>
@@ -478,7 +478,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="text-xs font-bold text-white group-hover:text-brand-gold transition-colors">
                       NIST
                     </div>
-                    <div className="text-[9px] text-slate-500 font-mono mt-1">
+                    <div className="text-[9px] text-slate-300 font-mono mt-1">
                       {copy.sourceNistTag}
                     </div>
                   </div>
@@ -488,13 +488,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
 
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-xs text-slate-500 font-mono tracking-wide flex items-center gap-2">
+            <div className="text-xs text-slate-300 font-mono tracking-wide flex items-center gap-2">
               <ShieldCheck size={14} /> {copy.strictDefensive}
             </div>
             <div className="flex items-center gap-6">
               <Link
                 to={localizedPath('/contact')}
-                className="text-xs font-mono uppercase tracking-wide text-slate-500 hover:text-white transition-colors"
+                className="text-xs font-mono uppercase tracking-wide text-slate-300 hover:text-white transition-colors"
               >
                 {copy.contact}
               </Link>

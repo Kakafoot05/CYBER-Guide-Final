@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../App';
@@ -39,7 +39,7 @@ describe('App routing', () => {
       </HelmetProvider>,
     );
 
-    expect(await screen.findByText(/Analysis Dossiers/i)).toBeTruthy();
+    expect(await screen.findByText(/^Analysis$/i)).toBeTruthy();
   });
 
   it('renders guides page when route points to guides', async () => {
@@ -61,7 +61,7 @@ describe('App routing', () => {
       </HelmetProvider>,
     );
 
-    expect(await screen.findByText(/Procedures & Playbooks/i)).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: /Playbooks/i })).toBeTruthy();
   });
 
   it('redirects english playbooks route to templates', async () => {
